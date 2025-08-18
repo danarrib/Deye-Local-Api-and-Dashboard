@@ -21,6 +21,8 @@ This is what is already working:
 - [x] Create a Dashboard to present the powerplant data
 - [x] Send a daily report to a Telegram Group (using a Telegram Bot)
 
+<img width="3840" height="1838" alt="image" src="https://github.com/user-attachments/assets/1a8689a3-aa75-4ffb-a7ea-f49da9f6e0c6" />
+
 ## What else needs to be done
 - [ ] Get data from individual PV inputs
 - [ ] Save data from individual PV inputs
