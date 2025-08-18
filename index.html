@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title id="page_title">Page title</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+      .white-text-with-shadow {
+        text-shadow: 2pt 2pt 4pt #000000;
+        color: #ffffff;
+      }
+
+      .darker-img {
+        filter: brightness(90%);
+      }
+      </style>
+  </head>
+  <body>
+
+    <div class="container">
+      <div class="row">
+        <h1 id="powerplant_name">Powerplant name</h1>
+      </div>
+
+      <div class="row">
+        <div class="col-6 col-md-6 col-lg-3">
+          <div class="card text-center">
+            <img src="img/power_now.jpg" class="card-img-top darker-img" alt="Sunrise">
+            <div class="card-img-overlay white-text-with-shadow">
+              <h2 class="card-title" id="power_now">
+                Power now<br />
+                0,000 W
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-6 col-lg-3">
+          <div class="card text-center">
+            <img src="img/power_today.jpg" class="card-img darker-img" alt="Sunrise">
+            <div class="card-img-overlay white-text-with-shadow">
+              <h2 class="card-title" id="power_today">
+                Power today<br />
+                0.0 kWh
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-6 col-lg-3">
+          <div class="card text-center">
+            <img src="img/sunrise.jpg" class="card-img darker-img" alt="Sunrise">
+            <div class="card-img-overlay white-text-with-shadow">
+              <h2 class="card-title" id="sunrise">
+                Sunrise<br />
+                06:00
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-6 col-lg-3">
+          <div class="card text-center">
+            <img src="img/sunset.jpg" class="card-img darker-img" alt="Sunset">
+            <div class="card-img-overlay white-text-with-shadow">
+              <h2 class="card-title" id="sunset">
+                Sunset<br />
+                18:10
+              </h2>
+            </div>
+          </div>
+        </div>
+        <p></p>
+      </div>
+
+      <div class="container">
+        <div class="row">
+          <h2>Total Power</h2>
+          <canvas id="myChart"></canvas>
+          <p></p>
+        </div>
+
+        <div class="row">
+          <h2>Individual inverters</h2>
+        </div>
+
+        <div class="row" id="inverters">
+
+        </div>
+      </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+    <script>
+      let colorIndex = 0;
+      let colors = ['red', 'blue', 'green', 'purple', 'orange', 'brown', 'pink', 'gray', 'cyan'];
+      let colorsrgb = ['rgb(255, 99, 132)', 'rgb(54, 162, 235)', 'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)', 'rgb(255, 205, 86)', 'rgb(201, 203, 207)', 'rgb(75, 192, 192)', 'rgb(54, 162, 235)'];
+      let colorsrgb2 = [[255, 99, 132], [54, 162, 235], [75, 192, 192], [153, 102, 255], [255, 159, 64], [255, 205, 86], [201, 203, 207], [75, 192, 192], [54, 162, 235]];
+
+      function getApiData() {
+        let url = 'overall.php';
+
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            // Sunrise and Sunset are on format "2025-03-10T06:04:39 -03:00" (YYYY-MM-DDTHH:MM:SS -03:00), get the time part
+            let sunrise = data.sunrise.split('T')[1].split(' ')[0];
+            let sunset = data.sunset.split('T')[1].split(' ')[0];
+
+            let strDateTime = formatDateTime(data.timestamp);
+
+            let page_title = `${data.powerplant_name} - ${strDateTime}`;
+
+            // Format power_now to have the thousands separator
+            let total_power_now = data.total_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+            document.getElementById('powerplant_name').innerHTML = page_title;
+            document.getElementById('page_title').innerHTML = page_title;
+            document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
+            document.getElementById('power_today').innerHTML = `Power today<br />${data.total_power_today} kWh`;
+            document.getElementById('sunrise').innerHTML = `Sunrise<br />${sunrise}`;
+            document.getElementById('sunset').innerHTML = `Sunset<br />${sunset}`;
+
+            updateChart(data.detailed_powerplant_data);
+            colorIndex = 0;
+            updateInvertersCharts(data.detailed_inverter_data, data.latest_inverter_data);
+          });
+      }
+
+      function updateInvertersCharts(data, latestData) {
+        // data has the following structure: [{"time": "2025-03-11T09:15:00Z", "device_sn": "3896126058", "power_now": "0"}]
+        // latestData has the following structure: [{"device_sn": "3896126058", "power_now": "0", "power_today": "0.0", "power_total": "0.0", "friendly_name": "Inverter 1"}]
+
+        // Get the unique inverters serial numbers
+        let inverters = data.map(d => d.device_sn);
+        inverters = inverters.filter((value, index, self) => self.indexOf(value) === index);
+
+        // Create the divs and canvas for each inverter
+        let invertersHtml = '';
+        inverters.forEach(inverter => {
+          invertersHtml += `<div class="col-12 col-md-6 col-lg-6">
+            <canvas id="inverter_${inverter}"></canvas>
+          </div>`;
+        });
+
+        document.getElementById('inverters').innerHTML = invertersHtml;
+
+        // For each inverter, filter the data and create the chart
+        inverters.forEach(inverter => {
+          let inverterData = data.filter(d => d.device_sn === inverter);
+          let inverterFriendlyName = latestData.find(d => d.device_sn === inverter)?.friendly_name || `Inverter ${inverter}`;
+
+          updateInverterChart(inverterData, inverter, colorsrgb2[colorIndex], inverterFriendlyName);
+
+          colorIndex++;
+          if(colorIndex >= colorsrgb2.length) {
+            colorIndex = 0;
+          }
+
+        });
+      }
+
+      function updateInverterChart(data, inverter, color, friendlyName) {
+        let ctx = document.getElementById(`inverter_${inverter}`);
+
+        let chartStatus = Chart.getChart(`inverter_${inverter}`); // <canvas> id
+        if (chartStatus != undefined) {
+          chartStatus.destroy();
+        }
+
+        let borderColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+        let backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
+
+        let labels = data.map(d => d.time);
+        // Convert the times from UTC to local
+        labels = labels.map(l => {
+          let date = new Date(l);
+          return date.toLocaleTimeString();
+        });
+
+        let values = data.map(d => d.power_now);
+
+        new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: `${friendlyName} Power (${inverter})`,
+            fill: true,
+            data: values,
+            borderColor: borderColor,
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            tension: 0.5
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      }
+
+      function updateChart(data) {
+        let ctx = document.getElementById('myChart');
+        let chartStatus = Chart.getChart('myChart'); // <canvas> id
+        if (chartStatus != undefined) {
+          chartStatus.destroy();
+        }
+
+        let labels = data.map(d => d.time);
+        // Convert the times from UTC to local
+        labels = labels.map(l => {
+          let date = new Date(l);
+          return date.toLocaleTimeString();
+        });
+
+        let values = data.map(d => d.total_power_now);
+
+        new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Total Power',
+            fill: true,
+            data: values,
+            borderWidth: 1,
+            tension: 0.5
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+      }
+
+      function formatDateTime(dateTime) {
+        // Receives a date and time in the format "2025-03-10T06:04:39Z" (YYYY-MM-DDTHH:MM:SS UTC) and returns it formatted
+        // as "10/03/2025 06:04" on local timezone
+
+        // Remove spaces from dateTime if any
+        dateTime = dateTime.replace(/\s/g, '');
+
+        let dateObj = new Date(dateTime);
+        return dateObj.toLocaleString();
+      }
+
+      getApiData();
+
+      var intervalId = window.setInterval(function(){
+        getApiData();
+      }, 60000);
+      
+    </script>
+
+
+  </body>
+</html>
