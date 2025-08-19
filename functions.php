@@ -20,11 +20,11 @@
     // Don't forget to set the inverters to not use dynamic IPs. Set the IPs statically.
     // Add as many inverters as you need
     $inverter_list = array(
-        array("ipaddress" => "192.168.15.201", "username" => "admin", "password" => "admin", "friendly_name" => "Inverter 1"),
-        array("ipaddress" => "192.168.15.202", "username" => "admin", "password" => "admin", "friendly_name" => "Inverter 2"),
-        array("ipaddress" => "192.168.15.203", "username" => "admin", "password" => "admin", "friendly_name" => "Inverter 3"),
-        array("ipaddress" => "192.168.15.204", "username" => "admin", "password" => "admin", "friendly_name" => "Inverter 4"),
-        array("ipaddress" => "192.168.15.205", "username" => "admin", "password" => "admin", "friendly_name" => "Front C"),
+        array("ipaddress" => "192.168.15.201", "username" => "admin", "password" => "admin", "friendly_name" => "North A"),
+        array("ipaddress" => "192.168.15.202", "username" => "admin", "password" => "admin", "friendly_name" => "North B"),
+        array("ipaddress" => "192.168.15.203", "username" => "admin", "password" => "admin", "friendly_name" => "South A"),
+        array("ipaddress" => "192.168.15.204", "username" => "admin", "password" => "admin", "friendly_name" => "South B"),
+        array("ipaddress" => "192.168.15.205", "username" => "admin", "password" => "admin", "friendly_name" => "South C"),
     );
 
     // ==== Do not edit below this line ====
@@ -154,6 +154,10 @@
         $query = "CREATE UNIQUE INDEX IF NOT EXISTS device_sn_uniq ON inverter_details (device_sn)";
         $result = pg_query($db, $query);
 
+        // Add an "order" field to the inverter_details table if it doesn't already exists
+        $query = "ALTER TABLE inverter_details ADD COLUMN IF NOT EXISTS \"order\" INT";
+        $result = pg_query($db, $query);
+
         // Close the connection to the database
         pg_close($db);
     }
@@ -174,9 +178,9 @@
         $result = pg_query_params($db, $query, array($data['device_sn'], $data['power_now'], $data['power_today'], $data['power_total'], $data['timestamp']));
 
         // Upsert data into the inverter_details table
-        $query = "INSERT INTO inverter_details (device_sn, friendly_name, created_at, last_ip_address) VALUES ($1, $2, $3, $4)
-                  ON CONFLICT (device_sn) DO UPDATE SET friendly_name = $2, created_at = $3, last_ip_address = $4";
-        $result = pg_query_params($db, $query, array($data['device_sn'], $data['friendly_name'], $data['timestamp'], $data['last_ip_address']));
+        $query = "INSERT INTO inverter_details (device_sn, friendly_name, created_at, last_ip_address, \"order\") VALUES ($1, $2, $3, $4, $5)
+                  ON CONFLICT (device_sn) DO UPDATE SET friendly_name = $2, created_at = $3, last_ip_address = $4, \"order\" = $5";
+        $result = pg_query_params($db, $query, array($data['device_sn'], $data['friendly_name'], $data['timestamp'], $data['last_ip_address'], $data['order']));
 
         // Close the connection to the database
         pg_close($db);
@@ -188,9 +192,11 @@
         }
 
         global $inverter_list;
+        $order = 0;
 
         // Iterate over the list of inverters
         foreach ($inverter_list as $inverter) {
+            $order++;
             $data = get_inverter_data($inverter['ipaddress'], $inverter['username'], $inverter['password']);
 
             // If the data has "error" key, try to restart the inverter and get the data again after 1 minute
@@ -218,6 +224,7 @@
 
             $data["friendly_name"] = $inverter['friendly_name'];
             $data["last_ip_address"] = $inverter['ipaddress'];
+            $data["order"] = $order;
 
             save_inverter_data($data);
         }
@@ -384,15 +391,16 @@
         interval '5 minutes'
     ) AS interval_start
 )
-SELECT ti.interval_start as time, pvsd.device_sn, pvsd.power_now
+SELECT ti.interval_start as time, pvsd.device_sn, pvsd.power_now, pvsd.power_today, idet.friendly_name, idet.order
 FROM time_intervals ti
 LEFT JOIN LATERAL (
     SELECT DISTINCT ON (device_sn) *
-    FROM pvstatsdetail
-    WHERE created_at BETWEEN ti.interval_start AND (ti.interval_start + interval '5 minutes')
-    ORDER BY device_sn, created_at DESC  -- Explicitly pick the latest record
+    FROM pvstatsdetail pvd
+    WHERE pvd.created_at BETWEEN ti.interval_start AND (ti.interval_start + interval '5 minutes')
+    ORDER BY pvd.device_sn, pvd.created_at DESC  -- Explicitly pick the latest record
 ) pvsd ON TRUE
-ORDER BY ti.interval_start, pvsd.device_sn, pvsd.created_at;";
+LEFT JOIN inverter_details idet ON pvsd.device_sn = idet.device_sn
+ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
 
         $result = pg_query($db, $query);
 

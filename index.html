@@ -42,7 +42,7 @@
             <img src="img/power_today.jpg" class="card-img darker-img" alt="Sunrise">
             <div class="card-img-overlay white-text-with-shadow">
               <h2 class="card-title" id="power_today">
-                Power today<br />
+                Energy today<br />
                 0.0 kWh
               </h2>
             </div>
@@ -123,7 +123,7 @@
             document.getElementById('powerplant_name').innerHTML = page_title;
             document.getElementById('page_title').innerHTML = page_title;
             document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
-            document.getElementById('power_today').innerHTML = `Power today<br />${data.total_power_today} kWh`;
+            document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today} kWh`;
             document.getElementById('sunrise').innerHTML = `Sunrise<br />${sunrise}`;
             document.getElementById('sunset').innerHTML = `Sunset<br />${sunset}`;
 
@@ -191,7 +191,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: `${friendlyName} Power (${inverter})`,
+            label: `${friendlyName} Power (${inverter}) - ${data[data.length - 1].power_today} kWh`,
             fill: true,
             data: values,
             borderColor: borderColor,
