@@ -37,9 +37,11 @@ This is what is already working:
 
 4. Create a new directory called `deye_api` inside an apache exposed directory (usually `/var/www/html/`)
 
-5. Edit the `functions.php` file and change the settings according to your database and powerplant configuration
+5. Copy to that directory all the files of this repository
 
-6. Add a Cron job to run the `crontasks.php` file every 5 minutes (run `crontab -e` and add a new line at the end of the file with `*/5 * * * * php /var/www/html/deye_api/crontasks.php`)
+6. Edit the `functions.php` file and change the settings according to your database and powerplant configuration
+
+7. Add a Cron job to run the `crontasks.php` file every 5 minutes (run `crontab -e` and add a new line at the end of the file with `*/5 * * * * php /var/www/html/deye_api/crontasks.php`)
 
 ## How to use
 
@@ -51,9 +53,11 @@ Open an Internet Browser and open `http://localhost/deye_api/`
 <img alt="image" src="https://github.com/user-attachments/assets/1a8689a3-aa75-4ffb-a7ea-f49da9f6e0c6" />
 
 ### API
-Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.200`
+Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
 
-Replace on the above URL the parameters with your inverter specific data.
+Replace on the above URL the parameters with your inverter specific details.
+
+If you plan to use only the API, you don't need to set up anything on the `function.php` file, and you don't need a database.
 
 #### Data Structure example
 
@@ -94,7 +98,7 @@ This program does exactly that: Parses the `status.html` file and get the follow
 ## Project requirements
 * Backend uses only PHP and Postgres
 * UI uses [Bootstrap](https://github.com/twbs/bootstrap) and [Chart.js](https://github.com/chartjs/Chart.js) libraries only
-* No fancy Frameworks to bloat the application. It's supposed to be simple.
+* No fancy Frameworks to bloat the application. No Package managers, nothing. Just plain HTML, Javascript and PHP. This project is intended to be simple.
 
 ## Development roadmap
 Here's a list of new features I wish to add to this project in the future:
