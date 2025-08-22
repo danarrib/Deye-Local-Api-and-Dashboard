@@ -103,7 +103,13 @@ This program does exactly that: Parses the `status.html` file and get the follow
 ## Development roadmap
 Here's a list of new features I wish to add to this project in the future:
 
-- [ ] Get data from individual PV inputs (each individual solar panel of each micro-inverter)
-- [ ] Save data from individual PV inputs on the database
+- [ ] Get data from individual PV inputs (each individual solar panel of each micro-inverter) 
+  - Voltage (V)
+  - Current (A)
+  - Power (W)
+  - Energy Today (kWh)
+  - Energy Total (kWh)
+- [ ] Get Inverter Temperature (Celsius)
+- [ ] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
 - [ ] Configuration UI (as it is now, the configuration is stored on the `function.php` file)
 - [ ] Make it work as a Docker compose package, to make set up easier for everyone
