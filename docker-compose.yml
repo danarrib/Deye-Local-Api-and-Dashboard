@@ -1,0 +1,28 @@
+services:
+  deye_php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - deye_db
+    environment:
+      - DB_HOST=deye_db
+      - DB_USER=deye_db_user
+      - DB_PASS=deye_db_pass_1234
+      - DB_NAME=deye_data
+
+  deye_db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=deye_db_user
+      - POSTGRES_PASSWORD=deye_db_pass_1234
+      - POSTGRES_DB=deye_data
+    ports:
+      - "5442:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

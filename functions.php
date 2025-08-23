@@ -3,11 +3,11 @@
     ini_set('display_startup_errors', '1');
     error_reporting(E_ALL ^ E_DEPRECATED);
 
-    $db_user = "deye_user";
-    $db_pass = "deye123@";
-    $db_host = "localhost";
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_user = getenv('DB_USER') ?: 'deye_user';
+    $db_pass = getenv('DB_PASS') ?: 'deye123@';
+    $db_name = getenv('DB_NAME') ?: 'deye_data';
     $db_port = "5432";
-    $db_name = "deye_data";
 
     $powerplant_timezone = 'America/Sao_Paulo'; // Used for displaying the local time
     $powerplant_name = "My Powerplant"; // Used for displaying the powerplant name
