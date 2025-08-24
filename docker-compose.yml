@@ -2,7 +2,7 @@ services:
   deye_php:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_php
     ports:
       - "8080:80"
     depends_on:
@@ -23,6 +23,13 @@ services:
       - "5442:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+  deye_cron:
+    build:
+      context: .
+      dockerfile: Dockerfile_cron
+    depends_on:
+      - deye_php
 
 volumes:
   pgdata:

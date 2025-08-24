@@ -3,7 +3,7 @@ FROM php:apache
 
 # Install dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
+    libpq-dev nano iputils-ping \
     && docker-php-ext-install pdo pdo_pgsql pgsql \
     && apt-get install -y libcurl4-openssl-dev \
     && docker-php-ext-install curl \
@@ -27,4 +27,4 @@ RUN chown -R www-data:www-data /var/www/html \
 EXPOSE 80
 
 # Start Apache in the foreground
-CMD ["apache2-foreground"]
+CMD apache2-foreground

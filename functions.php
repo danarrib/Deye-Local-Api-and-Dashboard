@@ -132,7 +132,7 @@
             power_now NUMERIC NOT NULL,
             power_today NUMERIC NOT NULL,
             power_total NUMERIC NOT NULL,
-            created_at TIMESTAMP NOT NULL
+            created_at TIMESTAMPTZ NOT NULL
         )";
         $result = pg_query($db, $query);
 
@@ -145,7 +145,7 @@
             id BIGSERIAL PRIMARY KEY NOT NULL,
             device_sn VARCHAR(30) NOT NULL,
             friendly_name VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL,
             last_ip_address VARCHAR(45) NOT NULL
         )";
         $result = pg_query($db, $query);
