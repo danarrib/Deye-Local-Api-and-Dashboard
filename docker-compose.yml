@@ -12,6 +12,7 @@ services:
       - DB_USER=deye_db_user
       - DB_PASS=deye_db_pass_1234
       - DB_NAME=deye_data
+    restart: always
 
   deye_db:
     image: postgres:latest
@@ -23,6 +24,7 @@ services:
       - "5442:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: always
 
   deye_cron:
     build:
@@ -30,6 +32,7 @@ services:
       dockerfile: Dockerfile_cron
     depends_on:
       - deye_php
+    restart: always
 
 volumes:
   pgdata:
