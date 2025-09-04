@@ -110,8 +110,17 @@
           .then(response => response.json())
           .then(data => {
             // Sunrise and Sunset are on format "2025-03-10T06:04:39 -03:00" (YYYY-MM-DDTHH:MM:SS -03:00), get the time part
-            let sunrise = data.sunrise.split('T')[1].split(' ')[0];
-            let sunset = data.sunset.split('T')[1].split(' ')[0];
+            let dtSunrise = new Date(data.sunrise);
+            let sunrise = dtSunrise.toLocaleTimeString(navigator.language, {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+
+            let dtSunset = new Date(data.sunset);
+            let sunset = dtSunset.toLocaleTimeString(navigator.language, {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
 
             let strDateTime = formatDateTime(data.timestamp);
 
@@ -123,7 +132,7 @@
             document.getElementById('powerplant_name').innerHTML = page_title;
             document.getElementById('page_title').innerHTML = page_title;
             document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
-            document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today} kWh`;
+            document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today.toLocaleString()} kWh`;
             document.getElementById('sunrise').innerHTML = `Sunrise<br />${sunrise}`;
             document.getElementById('sunset').innerHTML = `Sunset<br />${sunset}`;
 
@@ -181,7 +190,10 @@
         // Convert the times from UTC to local
         labels = labels.map(l => {
           let date = new Date(l);
-          return date.toLocaleTimeString();
+          return date.toLocaleTimeString(navigator.language, {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
         });
 
         let values = data.map(d => d.power_now);
@@ -221,7 +233,10 @@
         // Convert the times from UTC to local
         labels = labels.map(l => {
           let date = new Date(l);
-          return date.toLocaleTimeString();
+          return date.toLocaleTimeString(navigator.language, {
+            hour: '2-digit',
+            minute: '2-digit'
+          });
         });
 
         let values = data.map(d => d.total_power_now);

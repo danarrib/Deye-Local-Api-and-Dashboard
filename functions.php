@@ -234,15 +234,23 @@
 
     function get_today_latest_data() {
         global $db_host, $db_port, $db_name, $db_user, $db_pass;
+        global $powerplant_timezone, $reference_date;
+
+        // Get Current Date at powerplant timezone
+        $currentDate = new DateTime(null, new DateTimeZone($powerplant_timezone));
+        $currentDate->setTime(0, 0, 0);
+        $start_utc = clone $currentDate;
+        $start_utc->setTimezone(new DateTimeZone('UTC'));
+        $end_utc = clone $start_utc;
+        $end_utc->modify('+1 day');
 
         // Connect to the Postgres database "deye_data", using username and password
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
         // Get the latest data for today
-        $query = "SELECT DISTINCT ON (device_sn) * FROM pvstatsdetail WHERE DATE(created_at) = CURRENT_DATE ORDER BY device_sn, created_at DESC;";
-        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverter_details idet on pd.device_sn = idet.device_sn WHERE DATE(pd.created_at) = CURRENT_DATE ORDER BY pd.device_sn, pd.created_at DESC;";
+        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverter_details idet on pd.device_sn = idet.device_sn WHERE pd.created_at at time zone 'UTC' between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($start_utc->format('Y-m-d H:i:sO'), $end_utc->format('Y-m-d H:i:sO')));
 
         // Fetch the result as an associative array
         $data = pg_fetch_all($result);

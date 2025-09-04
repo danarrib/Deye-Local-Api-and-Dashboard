@@ -61,6 +61,10 @@
     $sunrise = get_sunrise($reference_date);
     $sunset = get_sunset($reference_date);
 
+    // Get the Sunrise date and time in UTC format
+    $sunrise_utc = $sunrise->setTimezone(new DateTimeZone('UTC'));
+    $sunset_utc = $sunset->setTimezone(new DateTimeZone('UTC'));
+
     // Get Detailed data to build the chart
     $detailed_inverter_data = get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date);
     $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
@@ -74,8 +78,8 @@
         "total_power_total" => $total_power_total,
         "timestamp" => $strDate,
         "reference_date" => $reference_date->format('Y-m-d\TH:i:s P'),
-        "sunrise" => $sunrise->format('Y-m-d\TH:i:s P'),
-        "sunset" => $sunset->format('Y-m-d\TH:i:s P'),
+        "sunrise" => $sunrise_utc->format('Y-m-d\TH:i:s\Z'),
+        "sunset" => $sunset_utc->format('Y-m-d\TH:i:s\Z'),
         "latest_inverter_data" => $latest_inverter_data,
         "detailed_inverter_data" => $detailed_inverter_data,
         "detailed_powerplant_data" => $detailed_powerplant_data,
