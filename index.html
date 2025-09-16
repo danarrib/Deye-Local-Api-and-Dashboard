@@ -271,7 +271,7 @@
         dateTime = dateTime.replace(/\s/g, '');
 
         let dateObj = new Date(dateTime);
-        return dateObj.toLocaleString();
+        return dateObj.toLocaleString(navigator.language, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
       }
 
       getApiData();
