@@ -3,14 +3,10 @@
     ini_set('display_startup_errors', '1');
     error_reporting(E_ALL ^ E_DEPRECATED);
 
-    $db_host = getenv('DB_HOST') ?: 'localhost';
-    $db_user = getenv('DB_USER') ?: 'deye_user';
-    $db_pass = getenv('DB_PASS') ?: 'deye123@';
-    $db_name = getenv('DB_NAME') ?: 'deye_data';
-    $db_port = "5432";
-
+    // ==== You are free to edit below this line ====
+ 
     $powerplant_timezone = 'America/Sao_Paulo'; // Used for displaying the local time
-    $powerplant_name = "My Powerplant"; // Used for displaying the powerplant name
+    $powerplant_name = "My Power Plant"; // Used for displaying the powerplant name
     $powerplant_latitude = -23.5; // Program use coordinates to know the exact time for sunrise and sunset
     $powerplant_longitude = -46.6;
 
@@ -29,6 +25,12 @@
 
     // ==== Do not edit below this line ====
 
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_user = getenv('DB_USER') ?: 'deye_user';
+    $db_pass = getenv('DB_PASS') ?: 'deye123@';
+    $db_name = getenv('DB_NAME') ?: 'deye_data';
+    $db_port = "5432";
+
     $processStartDateTime = new DateTime(null, new DateTimeZone($powerplant_timezone));
 
     setup_db();
@@ -41,7 +43,7 @@
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
-        // Set the timeout to 5 seconds
+        // Set the timeout to 15 seconds
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
@@ -156,6 +158,10 @@
 
         // Add an "order" field to the inverter_details table if it doesn't already exists
         $query = "ALTER TABLE inverter_details ADD COLUMN IF NOT EXISTS \"order\" INT";
+        $result = pg_query($db, $query);
+
+        // Create a unique index for the device_sn column
+        $query = "CREATE INDEX IF NOT EXISTS idx_pvstatsdetail_created_at ON pvstatsdetail (created_at)";
         $result = pg_query($db, $query);
 
         // Close the connection to the database
