@@ -269,7 +269,7 @@
     }
 
 
-    function send_daily_report() {
+    function send_daily_report($force = false) {
         global $powerplant_timezone;
         global $processStartDateTime;
 
@@ -277,7 +277,8 @@
         $sunset = get_todays_sunset();
 
         // If the current time is between sunset and 5 minutes after sunset, send a message to the telegram group
-        if ($processStartDateTime->getTimestamp() >= $sunset->getTimestamp() && $processStartDateTime->getTimestamp() <= $sunset->getTimestamp() + 300) {
+        if (($processStartDateTime->getTimestamp() >= $sunset->getTimestamp() 
+            && $processStartDateTime->getTimestamp() <= $sunset->getTimestamp() + 300) || $force === true) {
             // Get latest data from the inverters
             $all_data = get_today_latest_data();
 
@@ -293,9 +294,9 @@
                 $total_power_total += $data['power_total'];
             }
 
-            $messageText = "Total power generated today: " . number_format($total_power_today, 1) . " kWh\n";
+            $messageText = "Total energy generated today: " . number_format($total_power_today, 1) . " kWh";
 
-            send_telegram_message($messageText);
+            send_telegram_daily_chart($messageText);
         }
     }
 
@@ -339,6 +340,68 @@
         }
 
     }
+
+    function send_telegram_daily_chart($caption = '')
+    {
+        global $telegram_token, $telegram_chatId;
+
+        $url = "https://api.telegram.org/bot$telegram_token/sendPhoto";
+        
+        // Create a temporary file from the stream
+        $tempFile = tmpfile();
+        fwrite($tempFile, generateTodaysChart());
+        $tempFilePath = stream_get_meta_data($tempFile)['uri'];
+        
+        // Prepare the photo for upload
+        $photo = new CURLFile($tempFilePath, 'image/png', 'photo.png');
+        
+        // Set up the POST fields
+        $postFields = [
+            'chat_id' => $telegram_chatId,
+            'photo' => $photo,
+        ];
+        
+        if (!empty($caption)) {
+            $postFields['caption'] = $caption;
+        }
+        
+        // Initialize cURL
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $postFields,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
+        
+        // Execute the request
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        
+        // Clean up
+        curl_close($ch);
+        fclose($tempFile);
+        
+        // Check for errors
+        if ($response === false || $httpCode !== 200) {
+            return [
+                'success' => false,
+                'error' => $error ?: 'HTTP Code: ' . $httpCode,
+            ];
+        }
+        
+        // Decode the response
+        $result = json_decode($response, true);
+        
+        return [
+            'success' => $result['ok'] ?? false,
+            'result' => $result['result'] ?? null,
+            'error' => $result['description'] ?? null,
+        ];
+    }
+
 
     function get_todays_sunset() {
         global $powerplant_timezone;
@@ -498,6 +561,171 @@ ORDER BY ti.interval_start;";
         // Return the data
         return $data;
 
+    }
+
+    function generateTodaysChart()
+    {
+        global $powerplant_name, $powerplant_timezone;
+        $date = new DateTime(null, new DateTimeZone($powerplant_timezone));
+        $strDate = $date->format('Y-m-d\TH:i:s P');
+
+        $sunrise = get_sunrise($date);
+        $sunset = get_sunset($date);
+
+        // Create a new date object for reference date with the current date if after sunrise, or yesterday if before sunrise, without the time part
+        $reference_date = new DateTime(null, new DateTimeZone($powerplant_timezone));
+        $reference_date->setTime(0, 0, 0);
+
+        // Clone sunrise date to compare with the current date
+        $sunrise_date = clone $sunrise;
+        $sunrise_date->setTime(0, 0, 0);
+
+        if ($reference_date == $sunrise_date && $date < $sunrise) {
+            $reference_date->sub(new DateInterval('P1D'));
+        }
+
+        $sunrise = get_sunrise($reference_date);
+        $sunset = get_sunset($reference_date);
+
+        // Get Detailed data to build the chart
+        $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
+
+        $total_energy_today = 0;
+        $peak_power_today = 0;
+        $peak_power_time = '';
+
+        foreach ($detailed_powerplant_data as $point) 
+        {
+            if ($point['total_power_now'] > $peak_power_today) {
+                $peak_power_today = $point['total_power_now'];
+                $peak_power_time = (new DateTime($point['time'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($powerplant_timezone))->format('H:i');
+            }
+        }
+
+        // Get latest data from the inverters
+        $latest_data = get_today_latest_data();
+
+        // Iterate over the list of inverters
+        foreach ($latest_data as $data) {
+            $total_energy_today += $data['power_today'];
+        }
+
+        // Start building the chart
+        $canvas_width = 1280;
+        $canvas_height = 720;
+        $margins = 60;
+
+        $numberOfPoints = count($detailed_powerplant_data);
+        $chartWidth = $canvas_width - $margins * 2;
+        $chartHeight = $canvas_height - $margins * 2;
+        $maxValue = max(array_column($detailed_powerplant_data, 'total_power_now'));
+        $maxValue = ceil($maxValue / 100) * 100; // Round up to the nearest 100
+        $minValue = 0; // We want the chart to start at 0
+        $ratioX = $chartWidth / ($numberOfPoints - 1);
+        $ratioY = $chartHeight / ($maxValue - $minValue);
+
+        // Create the image
+        $img = imagecreatetruecolor($canvas_width, $canvas_height);
+
+        // Set anti-aliasing
+        imageantialias($img, false);
+
+        // Create some colors
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        $red = imagecolorallocate($img, 255, 0, 0);
+        $grey = imagecolorallocate($img, 200, 200, 200);
+        $blue = imagecolorallocate($img, 0, 0, 255);
+        //$light_blue = imagecolorallocate($img, 150, 200, 255);
+        $light_blue = imagecolorallocatealpha($img, 0, 100, 255, 75);
+        $light_gray = imagecolorallocate($img, 240, 240, 240);
+
+        // Fill the background with white
+        imagefilledrectangle($img, 0, 0, $canvas_width, $canvas_height, $white);
+
+        // Draw the labels (times) on the x-axis
+        $font_size = 10;
+        $font_name = __DIR__ . '/assets/Ubuntu-Regular.ttf'; // Path to a TTF font file
+        for ($i = 0; $i < $numberOfPoints; $i += max(1, intval($numberOfPoints / 20))) {
+            $x = $margins + $i * $ratioX;
+            $y = $canvas_height - $margins + 20;
+            $timeLabel = (new DateTime($detailed_powerplant_data[$i]['time'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($powerplant_timezone))->format('H:i');
+            imagettftext($img, $font_size, 0, $x - 10, $y, $black, $font_name, $timeLabel);
+            imageline($img, $x, $canvas_height - $margins, $x, $margins, $grey);
+        }
+
+        // Draw the labels (power) on the y-axis
+        $maxPowerLabel = ceil($maxValue / 100) * 100; // Round up to the nearest 100
+        $numberOfYLabels = 5;
+        $step = ($maxPowerLabel - $minValue) / $numberOfYLabels;
+        for ($i = 0; $i <= $numberOfYLabels; $i++) {
+            $powerValue = $minValue + $i * $step;
+            $y = $canvas_height - $margins - ($powerValue - $minValue) * $ratioY;
+            $label = round($powerValue, 0) . " W";
+            imagettftext($img, $font_size, 0, $margins - 50, $y + 5, $black, $font_name, $label);
+            imageline($img, $margins, $y, $canvas_width - $margins, $y, $grey);
+        }
+
+        // Draw the chart
+        for ($i = 0; $i < $numberOfPoints - 1; $i++) {
+            $x1 = $margins + $i * $ratioX;
+            $y1 = $canvas_height - $margins - ($detailed_powerplant_data[$i]['total_power_now'] - $minValue) * $ratioY;
+            $x2 = $margins + ($i + 1) * $ratioX;
+            $y2 = $canvas_height - $margins - ($detailed_powerplant_data[$i + 1]['total_power_now'] - $minValue) * $ratioY;
+
+            // Round the coordinates to avoid anti-aliasing issues
+            $x1 = round($x1)+1;
+            $y1 = round($y1);
+            $x2 = round($x2);
+            $y2 = round($y2);
+
+            // Draw the polygon
+            $points = array(
+                $x1, $canvas_height - $margins,
+                $x1, $y1,
+                $x2, $y2,
+                $x2, $canvas_height - $margins
+            );
+            imagefilledpolygon($img, $points, 4, $light_blue);
+
+            // Draw the line
+            imageline($img, $x1, $y1, $x2, $y2, $blue);
+        }
+
+        // Draw the border around the chart
+        imageline($img, $margins, $canvas_height - $margins, $margins, $margins, $black);
+        imageline($img, $margins, $canvas_height - $margins, $canvas_width - $margins, $canvas_height - $margins, $black);
+        imageline($img, $canvas_width - $margins, $canvas_height - $margins, $canvas_width - $margins, $margins, $black);
+        imageline($img, $margins, $margins, $canvas_width - $margins, $margins, $black);
+
+        // Add the chart title - powerplant name and date
+        $title = $powerplant_name . " - " . $reference_date->format('Y-m-d');
+        imagettftext($img, 16, 0, $canvas_width / 2 - strlen($title) * 4, 30, $black, $font_name, $title);
+        $xAxisLabel = "Time";
+        imagettftext($img, 14, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height - 20, $black, $font_name, $xAxisLabel);
+        $yAxisLabel = "Power (W)";
+        imagettftext($img, 14, 90, 20, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
+
+        // Draw a summary box on the top right corner, filled with light grey color
+        imagefilledrectangle($img, $canvas_width - $margins - 335, 80, $canvas_width - $margins - 20, 175, $light_gray);
+        imagerectangle($img, $canvas_width - $margins - 335, 80, $canvas_width - $margins - 20, 175, $black);
+
+        // Add the summary information: total energy generated today, peak power and time it occurred, sunrise and sunset times
+        $summary = "Total Energy Today: " . number_format($total_energy_today, 1) . " kWh\n";
+        $summary .= "Peak Power: " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
+        $summary .= "Sunrise: " . $sunrise->format('H:i') . " | Sunset: " . $sunset->format('H:i') . "\n";
+        $summaryLines = explode("\n", $summary);
+        $lineHeight = 24;
+        foreach ($summaryLines as $index => $line) {
+            imagettftext($img, 16, 0, $canvas_width - $margins - 320, 110 + $index * $lineHeight, $black, $font_name, $line);
+        }
+
+        // Output the image
+        ob_start();
+        imagepng($img);
+        $image_data = ob_get_clean();
+        imagedestroy($img);
+        return $image_data;
     }
 
 ?>
