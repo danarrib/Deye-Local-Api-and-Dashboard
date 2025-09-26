@@ -614,6 +614,10 @@ ORDER BY ti.interval_start;";
         $canvas_width = 1280;
         $canvas_height = 720;
         $margins = 60;
+        $labels_font_size = 10;
+        $title_font_size = 16;
+        $summary_font_size = 14;
+        $font_name = __DIR__ . '/assets/UbuntuMono-Regular.ttf'; // Path to a TTF font file
 
         $numberOfPoints = count($detailed_powerplant_data);
         $chartWidth = $canvas_width - $margins * 2;
@@ -644,13 +648,11 @@ ORDER BY ti.interval_start;";
         imagefilledrectangle($img, 0, 0, $canvas_width, $canvas_height, $white);
 
         // Draw the labels (times) on the x-axis
-        $font_size = 10;
-        $font_name = __DIR__ . '/assets/Ubuntu-Regular.ttf'; // Path to a TTF font file
         for ($i = 0; $i < $numberOfPoints; $i += max(1, intval($numberOfPoints / 20))) {
             $x = $margins + $i * $ratioX;
             $y = $canvas_height - $margins + 20;
             $timeLabel = (new DateTime($detailed_powerplant_data[$i]['time'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($powerplant_timezone))->format('H:i');
-            imagettftext($img, $font_size, 0, $x - 10, $y, $black, $font_name, $timeLabel);
+            imagettftext($img, $labels_font_size, 0, $x - 10, $y, $black, $font_name, $timeLabel);
             imageline($img, $x, $canvas_height - $margins, $x, $margins, $grey);
         }
 
@@ -662,7 +664,7 @@ ORDER BY ti.interval_start;";
             $powerValue = $minValue + $i * $step;
             $y = $canvas_height - $margins - ($powerValue - $minValue) * $ratioY;
             $label = round($powerValue, 0) . " W";
-            imagettftext($img, $font_size, 0, $margins - 50, $y + 5, $black, $font_name, $label);
+            imagettftext($img, $labels_font_size, 0, $margins - 50, $y + 5, $black, $font_name, $label);
             imageline($img, $margins, $y, $canvas_width - $margins, $y, $grey);
         }
 
@@ -700,25 +702,31 @@ ORDER BY ti.interval_start;";
 
         // Add the chart title - powerplant name and date
         $title = $powerplant_name . " - " . $reference_date->format('Y-m-d');
-        imagettftext($img, 16, 0, $canvas_width / 2 - strlen($title) * 4, 30, $black, $font_name, $title);
+        imagettftext($img, $title_font_size, 0, $canvas_width / 2 - strlen($title) * 4, 30, $black, $font_name, $title);
         $xAxisLabel = "Time";
-        imagettftext($img, 14, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height - 20, $black, $font_name, $xAxisLabel);
+        imagettftext($img, $summary_font_size, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height - 20, $black, $font_name, $xAxisLabel);
         $yAxisLabel = "Power (W)";
-        imagettftext($img, 14, 90, 20, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
-
-        // Draw a summary box on the top right corner, filled with light grey color
-        imagefilledrectangle($img, $canvas_width - $margins - 335, 80, $canvas_width - $margins - 20, 175, $light_gray);
-        imagerectangle($img, $canvas_width - $margins - 335, 80, $canvas_width - $margins - 20, 175, $black);
+        imagettftext($img, $summary_font_size, 90, 20, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
 
         // Add the summary information: total energy generated today, peak power and time it occurred, sunrise and sunset times
-        $summary = "Total Energy Today: " . number_format($total_energy_today, 1) . " kWh\n";
-        $summary .= "Peak Power: " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
+        $summary =  "Total Energy: " . number_format($total_energy_today, 1) . " kWh\n";
+        $summary .= "Peak Power:   " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
         $summary .= "Sunrise: " . $sunrise->format('H:i') . " | Sunset: " . $sunset->format('H:i') . "\n";
-        $summaryLines = explode("\n", $summary);
-        $lineHeight = 24;
-        foreach ($summaryLines as $index => $line) {
-            imagettftext($img, 16, 0, $canvas_width - $margins - 320, 110 + $index * $lineHeight, $black, $font_name, $line);
-        }
+
+        // Get the text size to draw a box around it
+        $bbox = imagettfbbox($summary_font_size, 0, $font_name, $summary);
+        $textWidth = $bbox[2] - $bbox[0];
+        $textHeight = $bbox[1] - $bbox[7];
+
+        $x = $canvas_width - ($margins * 1.5) - $textWidth;
+        $y = $margins * 1.5;
+        $boxmargin = 10;
+
+        imagefilledrectangle($img, $x - $boxmargin, $y - $boxmargin - $summary_font_size, $x + $textWidth + $boxmargin, $y + $textHeight + $boxmargin - $summary_font_size, $light_gray);
+        imagerectangle($img, $x - $boxmargin, $y - $boxmargin - $summary_font_size, $x + $textWidth + $boxmargin, $y + $textHeight + $boxmargin - $summary_font_size, $black);
+
+        // Draw the text inside the box
+        imagettftext($img, $summary_font_size, 0, $x, $y, $black, $font_name, $summary);
 
         // Output the image
         ob_start();
