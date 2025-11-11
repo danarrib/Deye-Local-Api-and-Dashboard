@@ -69,6 +69,9 @@
     $detailed_inverter_data = get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date);
     $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
 
+    // Get latest weather data
+    $latest_weather_data = fetchLatestWeatherData();
+
     // Build a JSON object with the total power being generated now, today and total
     $json = array(
         "powerplant_name" => $powerplant_name,
@@ -83,6 +86,7 @@
         "latest_inverter_data" => $latest_inverter_data,
         "detailed_inverter_data" => $detailed_inverter_data,
         "detailed_powerplant_data" => $detailed_powerplant_data,
+        "latest_weather_data" => $latest_weather_data,
     );
 
     // Return the JSON object

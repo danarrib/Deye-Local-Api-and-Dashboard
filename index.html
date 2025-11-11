@@ -20,55 +20,77 @@
   <body>
 
     <div class="container">
-      <div class="row">
-        <h1 id="powerplant_name">Powerplant name</h1>
-      </div>
 
       <div class="row">
-        <div class="col-6 col-md-6 col-lg-3">
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
+          <div class="card text-center">
+            <img src="img/calendar.jpg" class="card-img-top darker-img" alt="Powerplant">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="powerplant_name">
+                Powerplant<br />
+                01/01/2025<br />
+                12:00
+              </h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
           <div class="card text-center">
             <img src="img/power_now.jpg" class="card-img-top darker-img" alt="Sunrise">
-            <div class="card-img-overlay white-text-with-shadow">
-              <h2 class="card-title" id="power_now">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="power_now">
                 Power now<br />
                 0,000 W
-              </h2>
+              </h4>
             </div>
           </div>
         </div>
 
-        <div class="col-6 col-md-6 col-lg-3">
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
           <div class="card text-center">
             <img src="img/power_today.jpg" class="card-img darker-img" alt="Sunrise">
-            <div class="card-img-overlay white-text-with-shadow">
-              <h2 class="card-title" id="power_today">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="power_today">
                 Energy today<br />
                 0.0 kWh
-              </h2>
+              </h4>
             </div>
           </div>
         </div>
 
-        <div class="col-6 col-md-6 col-lg-3">
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
+          <div class="card text-center">
+            <img src="img/sunrise.jpg" class="card-img darker-img" alt="Weather" id="weather-image">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="weather">
+                Weather<br />
+                Cloudy, 22°C
+              </h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
           <div class="card text-center">
             <img src="img/sunrise.jpg" class="card-img darker-img" alt="Sunrise">
-            <div class="card-img-overlay white-text-with-shadow">
-              <h2 class="card-title" id="sunrise">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="sunrise">
                 Sunrise<br />
                 06:00
-              </h2>
+              </h4>
             </div>
           </div>
         </div>
 
-        <div class="col-6 col-md-6 col-lg-3">
+        <div class="col-6 col-md-4 col-lg-4 col-xl-2 mt-4">
           <div class="card text-center">
             <img src="img/sunset.jpg" class="card-img darker-img" alt="Sunset">
-            <div class="card-img-overlay white-text-with-shadow">
-              <h2 class="card-title" id="sunset">
+            <div class="card-img-overlay white-text-with-shadow align-items-center d-flex justify-content-center">
+              <h4 class="card-title" id="sunset">
                 Sunset<br />
                 18:10
-              </h2>
+              </h4>
             </div>
           </div>
         </div>
@@ -124,12 +146,21 @@
 
             let strDateTime = formatDateTime(data.timestamp);
 
-            let page_title = `${data.powerplant_name} - ${strDateTime}`;
+            let page_title = `${data.powerplant_name}, ${strDateTime}`;
+            let powerplant_info = page_title.replaceAll(', ', '<br />');
 
             // Format power_now to have the thousands separator
             let total_power_now = data.total_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-            document.getElementById('powerplant_name').innerHTML = page_title;
+            // Update weather info
+            let weatherInfo = `${data.latest_weather_data.condition}, ${data.latest_weather_data.temperature}°C`;
+            // Capitalize first letter
+            weatherInfo = weatherInfo.charAt(0).toUpperCase() + weatherInfo.slice(1);
+
+            document.getElementById('weather').innerHTML = weatherInfo;
+            document.getElementById('weather-image').src = `img/weather_${data.latest_weather_data.icon}.jpg`;
+
+            document.getElementById('powerplant_name').innerHTML = powerplant_info;
             document.getElementById('page_title').innerHTML = page_title;
             document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
             document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today.toLocaleString()} kWh`;
@@ -274,12 +305,37 @@
         return dateObj.toLocaleString(navigator.language, {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'});
       }
 
+      function detectAndSetDarkMode() {
+        // Check to see if Media-Queries are supported
+        var htmlElement = document.getElementsByTagName('html')[0];
+        if (window.matchMedia) {
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            detectAndSetDarkMode();
+          });
+
+          // Check if the dark-mode Media-Query matches
+          if(window.matchMedia('(prefers-color-scheme: dark)').matches){
+            // Add atribute data-bs-theme="dark" to the html tag
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+          } else {
+            // Light
+            htmlElement.setAttribute('data-bs-theme', 'light');
+          }
+        } else {
+          // Default (when Media-Queries are not supported)
+            htmlElement.setAttribute('data-bs-theme', 'light');
+        }
+      }
+
+      detectAndSetDarkMode();
       getApiData();
 
       var intervalId = window.setInterval(function(){
         getApiData();
       }, 60000);
       
+
+
     </script>
 
 

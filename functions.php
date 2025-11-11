@@ -31,6 +31,10 @@
     $db_name = getenv('DB_NAME') ?: 'deye_data';
     $db_port = "5432";
 
+    include_once 'db_functions.php';
+    include_once 'weather_functions.php';
+    include_once 'telegram_functions.php';
+
     $processStartDateTime = new DateTime(null, new DateTimeZone($powerplant_timezone));
 
     setup_db();
@@ -121,77 +125,6 @@
         return $info['http_code'] == 200;
     }
 
-    function setup_db() {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
-
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Create the table "pvstatsdetail" if it does not exist
-        $query = "CREATE TABLE IF NOT EXISTS pvstatsdetail (
-            id BIGSERIAL PRIMARY KEY NOT NULL,
-            device_sn VARCHAR(30) NOT NULL,
-            power_now NUMERIC NOT NULL,
-            power_today NUMERIC NOT NULL,
-            power_total NUMERIC NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL
-        )";
-        $result = pg_query($db, $query);
-
-        // Create a index for the device_sn column
-        $query = "CREATE INDEX IF NOT EXISTS device_sn_idx ON pvstatsdetail (device_sn)";
-        $result = pg_query($db, $query);
-
-        // Create a table for storing the inverter details
-        $query = "CREATE TABLE IF NOT EXISTS inverter_details (
-            id BIGSERIAL PRIMARY KEY NOT NULL,
-            device_sn VARCHAR(30) NOT NULL,
-            friendly_name VARCHAR(100) NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL,
-            last_ip_address VARCHAR(45) NOT NULL
-        )";
-        $result = pg_query($db, $query);
-
-        // Create a unique index for the device_sn column
-        $query = "CREATE UNIQUE INDEX IF NOT EXISTS device_sn_uniq ON inverter_details (device_sn)";
-        $result = pg_query($db, $query);
-
-        // Add an "order" field to the inverter_details table if it doesn't already exists
-        $query = "ALTER TABLE inverter_details ADD COLUMN IF NOT EXISTS \"order\" INT";
-        $result = pg_query($db, $query);
-
-        // Create a unique index for the device_sn column
-        $query = "CREATE INDEX IF NOT EXISTS idx_pvstatsdetail_created_at ON pvstatsdetail (created_at)";
-        $result = pg_query($db, $query);
-
-        // Close the connection to the database
-        pg_close($db);
-    }
-
-    function save_inverter_data($data) {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
-
-        // if power_now is 0, power_today is 0 and power_total is 0, just skip it
-        if ($data['power_now'] == 0 && $data['power_today'] == 0 && $data['power_total'] == 0) {
-            return;
-        }
-
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Insert the data into the table "pvstatsdetail"
-        $query = "INSERT INTO pvstatsdetail (device_sn, power_now, power_today, power_total, created_at) VALUES ($1, $2, $3, $4, $5)";
-        $result = pg_query_params($db, $query, array($data['device_sn'], $data['power_now'], $data['power_today'], $data['power_total'], $data['timestamp']));
-
-        // Upsert data into the inverter_details table
-        $query = "INSERT INTO inverter_details (device_sn, friendly_name, created_at, last_ip_address, \"order\") VALUES ($1, $2, $3, $4, $5)
-                  ON CONFLICT (device_sn) DO UPDATE SET friendly_name = $2, created_at = $3, last_ip_address = $4, \"order\" = $5";
-        $result = pg_query_params($db, $query, array($data['device_sn'], $data['friendly_name'], $data['timestamp'], $data['last_ip_address'], $data['order']));
-
-        // Close the connection to the database
-        pg_close($db);
-    }
-
     function refresh_inverter_data() {
         if(is_after_sunset_or_before_sunrise()) {
             return;
@@ -236,39 +169,6 @@
         }
     }
 
-    
-
-    function get_today_latest_data() {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
-        global $powerplant_timezone, $reference_date;
-
-        // Get Current Date at powerplant timezone
-        $currentDate = new DateTime(null, new DateTimeZone($powerplant_timezone));
-        $currentDate->setTime(0, 0, 0);
-        $start_utc = clone $currentDate;
-        $start_utc->setTimezone(new DateTimeZone('UTC'));
-        $end_utc = clone $start_utc;
-        $end_utc->modify('+1 day');
-
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Get the latest data for today
-        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverter_details idet on pd.device_sn = idet.device_sn WHERE pd.created_at at time zone 'UTC' between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
-
-        $result = pg_query_params($db, $query, array($start_utc->format('Y-m-d H:i:sO'), $end_utc->format('Y-m-d H:i:sO')));
-
-        // Fetch the result as an associative array
-        $data = pg_fetch_all($result);
-
-        // Close the connection to the database
-        pg_close($db);
-
-        // Return the data
-        return $data;
-    }
-
-
     function send_daily_report($force = false) {
         global $powerplant_timezone;
         global $processStartDateTime;
@@ -296,6 +196,26 @@
 
             $messageText = "Total energy generated today: " . number_format($total_power_today, 1) . " kWh";
 
+            $top_daily_energy = getDailyTopEnergy($processStartDateTime);
+
+            // If top_daily_energy is greater than total_power_today, add a message to the telegram message
+            if ($top_daily_energy > 0 && $total_power_today >= $top_daily_energy || $force === true) {
+                $messageText .= "\n🏆 New daily record! Previous record was " . number_format($top_daily_energy, 1) . " kWh";
+            }
+
+            // If today is the last day of the month
+            if($processStartDateTime->format('d') == $processStartDateTime->format('t') || $force === true) {
+                $top_monthly_energy = getMonthlyTopEnergy($processStartDateTime);
+                $energy_this_month = getMonthEnergy($processStartDateTime);
+
+                $messageText .= "\n\nTotal energy generated this month: " . number_format($energy_this_month, 1) . " kWh";
+
+                // If top_monthly_energy is greater than energy_this_month, add a message to the telegram message
+                if ($top_monthly_energy > 0 && $energy_this_month >= $top_monthly_energy) {
+                    $messageText .= "\n🏆 New monthly record! Previous record was " . number_format($top_monthly_energy, 1) . " kWh";
+                }
+            }
+
             send_telegram_daily_chart($messageText);
         }
     }
@@ -313,95 +233,6 @@
 
         return false;
     }
-
-    function send_telegram_message($messageText) {
-        global $telegram_token, $telegram_chatId;
-
-        $url = "https://api.telegram.org/bot$telegram_token/sendMessage?chat_id=$telegram_chatId&text=" . urlencode($messageText);
-
-        $options = [
-            "http" => [
-                "method" => "GET",
-                "header" => "Content-Type: application/json\r\n"
-            ]
-        ];
-    
-        // Create context stream
-        $context = stream_context_create($options);
-    
-        // Make the GET request and get the response
-        $response = file_get_contents($url, false, $context);
-    
-        // Check for errors
-        if ($response === FALSE) {
-            return false;
-        } else {
-            return true;
-        }
-
-    }
-
-    function send_telegram_daily_chart($caption = '')
-    {
-        global $telegram_token, $telegram_chatId;
-
-        $url = "https://api.telegram.org/bot$telegram_token/sendPhoto";
-        
-        // Create a temporary file from the stream
-        $tempFile = tmpfile();
-        fwrite($tempFile, generateTodaysChart());
-        $tempFilePath = stream_get_meta_data($tempFile)['uri'];
-        
-        // Prepare the photo for upload
-        $photo = new CURLFile($tempFilePath, 'image/png', 'photo.png');
-        
-        // Set up the POST fields
-        $postFields = [
-            'chat_id' => $telegram_chatId,
-            'photo' => $photo,
-        ];
-        
-        if (!empty($caption)) {
-            $postFields['caption'] = $caption;
-        }
-        
-        // Initialize cURL
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => $postFields,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_SSL_VERIFYPEER => false,
-        ]);
-        
-        // Execute the request
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        
-        // Clean up
-        curl_close($ch);
-        fclose($tempFile);
-        
-        // Check for errors
-        if ($response === false || $httpCode !== 200) {
-            return [
-                'success' => false,
-                'error' => $error ?: 'HTTP Code: ' . $httpCode,
-            ];
-        }
-        
-        // Decode the response
-        $result = json_decode($response, true);
-        
-        return [
-            'success' => $result['ok'] ?? false,
-            'result' => $result['result'] ?? null,
-            'error' => $result['description'] ?? null,
-        ];
-    }
-
 
     function get_todays_sunset() {
         global $powerplant_timezone;
@@ -451,120 +282,7 @@
         return $sunrise;
     }
 
-    function get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date) {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
-
-        // Format reference date as "YYYY-MM-DD"
-        $reference_date = $reference_date->format('Y-m-d');
-
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Get the latest data for today
-        $query = "WITH time_intervals AS (
-    SELECT generate_series(
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC'),  -- Start at midnight today
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
-        interval '5 minutes'
-    ) AS interval_start
-)
-SELECT ti.interval_start as time, pvsd.device_sn, pvsd.power_now, pvsd.power_today, idet.friendly_name, idet.order
-FROM time_intervals ti
-LEFT JOIN LATERAL (
-    SELECT DISTINCT ON (device_sn) *
-    FROM pvstatsdetail pvd
-    WHERE pvd.created_at BETWEEN ti.interval_start AND (ti.interval_start + interval '5 minutes')
-    ORDER BY pvd.device_sn, pvd.created_at DESC  -- Explicitly pick the latest record
-) pvsd ON TRUE
-LEFT JOIN inverter_details idet ON pvsd.device_sn = idet.device_sn
-ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
-
-        $result = pg_query($db, $query);
-
-        // Fetch the result as an associative array
-        $data = pg_fetch_all($result);
-
-        // Close the connection to the database
-        pg_close($db);
-
-        // Remove the rows with device_sn as NULL and (time before sunrise or after sunset)
-        $data = array_values(array_filter($data, function($row) use ($sunrise, $sunset) {
-            $interval_start_utc = new DateTime($row['time'], new DateTimeZone('UTC'));
-            return $row['device_sn'] != NULL && $interval_start_utc >= $sunrise && $interval_start_utc <= $sunset;
-        }));
-
-        // Update the data interval_start to add the timezone information
-        foreach ($data as &$row) {
-            $interval_start_utc = new DateTime($row['time'], new DateTimeZone('UTC'));
-            $row['time'] = $interval_start_utc->format('Y-m-d\TH:i:s\Z');
-        }
-
-        // Return the data
-        return $data;
-
-    }
-
-    function get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date) {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
-
-        // Format reference date as "YYYY-MM-DD"
-        $reference_date = $reference_date->format('Y-m-d');
-
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Get the latest data for today
-        $query = "WITH time_intervals AS (
-    SELECT generate_series(
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC'),  -- Start at midnight today
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
-        interval '5 minutes'
-    ) AS interval_start
-)
-SELECT 
-    ti.interval_start as time,
-    SUM(pvsd.power_now) as total_power_now
-FROM time_intervals ti
-LEFT JOIN LATERAL (
-    SELECT *
-    FROM pvstatsdetail
-    WHERE created_at BETWEEN ti.interval_start AND (ti.interval_start + interval '5 minutes')
-    ORDER BY created_at DESC
-) pvsd ON TRUE
-GROUP BY ti.interval_start
-ORDER BY ti.interval_start;";
-
-        $result = pg_query($db, $query);
-
-        // Fetch the result as an associative array
-        $data = pg_fetch_all($result);
-
-        // Close the connection to the database
-        pg_close($db);
-
-        // Remove the rows with device_sn as NULL and (time before sunrise or after sunset)
-        $data = array_values(array_filter($data, function($row) use ($sunrise, $sunset) {
-            $interval_start_utc = new DateTime($row['time'], new DateTimeZone('UTC'));
-            return $row['total_power_now'] !== NULL && $interval_start_utc >= $sunrise && $interval_start_utc <= $sunset;
-        }));
-
-        // Update the data interval_start to add the timezone information
-        foreach ($data as &$row) {
-            $interval_start_utc = new DateTime($row['time'], new DateTimeZone('UTC'));
-            $row['time'] = $interval_start_utc->format('Y-m-d\TH:i:s\Z');
-
-            // total_power_now is a number with 1 decimal digit, so convert it to float with 1 decimal digit if it is not NULL, otherwise set to 0
-            $row['total_power_now'] = $row['total_power_now'] != NULL ? round(floatval($row['total_power_now']), 1) : 0;
-            
-        }
-
-        // Return the data
-        return $data;
-
-    }
-
-    function generateTodaysChart()
-    {
+    function generateTodaysChart() {
         global $powerplant_name, $powerplant_timezone;
         $date = new DateTime(null, new DateTimeZone($powerplant_timezone));
         $strDate = $date->format('Y-m-d\TH:i:s P');
@@ -611,12 +329,36 @@ ORDER BY ti.interval_start;";
         }
 
         // Start building the chart
-        $canvas_width = 1280;
-        $canvas_height = 720;
-        $margins = 60;
-        $labels_font_size = 10;
-        $title_font_size = 16;
-        $summary_font_size = 14;
+        $canvas_resolution = 'hd'; // Options: 'sd', 'hd', 'fhd', 'qhd', '4k', '8k'
+
+        if ($canvas_resolution == 'sd') {
+            $canvas_width = 640;
+            $canvas_height = 360;
+        } elseif ($canvas_resolution == 'hd') {
+            $canvas_width = 1280;
+            $canvas_height = 720;
+        } elseif ($canvas_resolution == 'fhd') {
+            $canvas_width = 1920;
+            $canvas_height = 1080;
+        } elseif ($canvas_resolution == 'qhd') {
+            $canvas_width = 2560;
+            $canvas_height = 1440;
+        } elseif ($canvas_resolution == '4k') {
+            $canvas_width = 3840;
+            $canvas_height = 2160;
+        } elseif ($canvas_resolution == '8k') {
+            $canvas_width = 7680;
+            $canvas_height = 4320;
+        } else {
+            // Default to HD
+            $canvas_width = 1280;
+            $canvas_height = 720;
+        }
+
+        $margins = $canvas_width * 0.065;
+        $labels_font_size = $canvas_height * 0.017;
+        $title_font_size = $canvas_height * 0.025;
+        $summary_font_size = $canvas_height * 0.022;
         $font_name = __DIR__ . '/assets/UbuntuMono-Regular.ttf'; // Path to a TTF font file
 
         $numberOfPoints = count($detailed_powerplant_data);
@@ -650,9 +392,9 @@ ORDER BY ti.interval_start;";
         // Draw the labels (times) on the x-axis
         for ($i = 0; $i < $numberOfPoints; $i += max(1, intval($numberOfPoints / 20))) {
             $x = $margins + $i * $ratioX;
-            $y = $canvas_height - $margins + 20;
+            $y = $canvas_height - $margins + ($canvas_height * 0.027);
             $timeLabel = (new DateTime($detailed_powerplant_data[$i]['time'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($powerplant_timezone))->format('H:i');
-            imagettftext($img, $labels_font_size, 0, $x - 10, $y, $black, $font_name, $timeLabel);
+            imagettftext($img, $labels_font_size, 0, $x - ($canvas_width * 0.008), $y, $black, $font_name, $timeLabel);
             imageline($img, $x, $canvas_height - $margins, $x, $margins, $grey);
         }
 
@@ -663,13 +405,18 @@ ORDER BY ti.interval_start;";
         for ($i = 0; $i <= $numberOfYLabels; $i++) {
             $powerValue = $minValue + $i * $step;
             $y = $canvas_height - $margins - ($powerValue - $minValue) * $ratioY;
-            $label = round($powerValue, 0) . " W";
-            imagettftext($img, $labels_font_size, 0, $margins - 50, $y + 5, $black, $font_name, $label);
+            $label = number_format(round($powerValue / 1000, 1),1) . "kW";
+            imagettftext($img, $labels_font_size, 0, $margins - ($canvas_width * 0.039), $y + 5, $black, $font_name, $label);
             imageline($img, $margins, $y, $canvas_width - $margins, $y, $grey);
         }
 
         // Draw the chart
         for ($i = 0; $i < $numberOfPoints - 1; $i++) {
+            // If the next point is NULL, skip it
+            if ($detailed_powerplant_data[$i]['total_power_now'] === null || $detailed_powerplant_data[$i + 1]['total_power_now'] === null) {
+                continue;
+            }
+
             $x1 = $margins + $i * $ratioX;
             $y1 = $canvas_height - $margins - ($detailed_powerplant_data[$i]['total_power_now'] - $minValue) * $ratioY;
             $x2 = $margins + ($i + 1) * $ratioX;
@@ -702,11 +449,11 @@ ORDER BY ti.interval_start;";
 
         // Add the chart title - powerplant name and date
         $title = $powerplant_name . " - " . $reference_date->format('Y-m-d');
-        imagettftext($img, $title_font_size, 0, $canvas_width / 2 - strlen($title) * 4, 30, $black, $font_name, $title);
+        imagettftext($img, $title_font_size, 0, $canvas_width / 2 - strlen($title) * 4, $canvas_height * 0.05, $black, $font_name, $title);
         $xAxisLabel = "Time";
-        imagettftext($img, $summary_font_size, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height - 20, $black, $font_name, $xAxisLabel);
+        imagettftext($img, $summary_font_size, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height * 0.96, $black, $font_name, $xAxisLabel);
         $yAxisLabel = "Power (W)";
-        imagettftext($img, $summary_font_size, 90, 20, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
+        imagettftext($img, $summary_font_size, 90, $canvas_width * 0.02, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
 
         // Add the summary information: total energy generated today, peak power and time it occurred, sunrise and sunset times
         $summary =  "Total Energy: " . number_format($total_energy_today, 1) . " kWh\n";

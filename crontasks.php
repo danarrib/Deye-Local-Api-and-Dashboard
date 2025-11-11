@@ -11,6 +11,9 @@
     // Refresh inverter data
     refresh_inverter_data();
 
+    // Save weather data
+    saveWeatherData();
+    
     // Send daily report
     send_daily_report();
 
