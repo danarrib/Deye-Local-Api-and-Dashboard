@@ -50,7 +50,7 @@ There are two ways to use: The API and the Dashboard:
 ### Dashboard
 Open an Internet Browser and open `http://localhost/deye_api/`
 
-<img alt="image" src="https://github.com/user-attachments/assets/1a8689a3-aa75-4ffb-a7ea-f49da9f6e0c6" />
+<img alt="image" src="https://github.com/user-attachments/assets/9cb7b545-1a5f-487e-8527-142f44a81e71" />
 
 ### API
 Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
@@ -110,6 +110,7 @@ Here's a list of new features I wish to add to this project in the future:
   - Energy Today (kWh)
   - Energy Total (kWh)
 - [ ] Get Inverter Temperature (Celsius)
-- [ ] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
+- [x] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
 - [ ] Configuration UI (as it is now, the configuration is stored on the `function.php` file)
-- [ ] Make it work as a Docker compose package, to make set up easier for everyone
+- [x] Make it work as a Docker compose package, to make set up easier for everyone
+- [x] Support Dark mode
