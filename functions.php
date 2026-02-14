@@ -5,7 +5,7 @@
 
     // ==== You are free to edit below this line ====
  
-    $powerplant_timezone = 'America/Sao_Paulo'; // Used for displaying the local time
+    $powerplant_timezone = 'America/Sao_Paulo'; // Used for displaying the local time, IANA timezone format (https://nodatime.org/TimeZones)
     $powerplant_name = "My Power Plant"; // Used for displaying the powerplant name
     $powerplant_latitude = -23.5; // Program use coordinates to know the exact time for sunrise and sunset
     $powerplant_longitude = -46.6;
@@ -131,6 +131,7 @@
         }
 
         global $inverter_list;
+        global $processStartDateTime;
         $order = 0;
 
         // Iterate over the list of inverters
@@ -167,6 +168,8 @@
 
             save_inverter_data($data);
         }
+
+        fix_incomplete_data($processStartDateTime);
     }
 
     function send_daily_report($force = false) {

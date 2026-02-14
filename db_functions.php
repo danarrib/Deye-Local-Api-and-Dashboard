@@ -329,5 +329,116 @@ select max(total_energy) as total_energy from total_energy;";
         // Close the connection to the database
         pg_close($db);
         return $total_energy;
-    }    
+    }
+
+    function fix_incomplete_data($reference_date) {
+
+        global $db_host, $db_port, $db_name, $db_user, $db_pass;
+        global $powerplant_timezone;
+
+        $reference_date = $reference_date->format('Y-m-d');
+
+        // Connect to the Postgres database "deye_data", using username and password
+        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+
+        $query = "with pvdata as (
+select		p.device_sn, 
+			p.created_at, 
+			p.power_now,
+			p.power_today as energy_today,
+			p.power_total as energy_total
+from 		pvstatsdetail p 
+where 		p.created_at between '$reference_date 00:00:00' and '$reference_date 23:59:59'
+order by	device_sn, created_at
+), 
+pvgapbegin as (
+select 		pv.device_sn, 
+			pv.created_at as gap_begin, 
+			pv.power_now  as power_now_begin,
+			pv.energy_today as energy_today_begin,
+			pv.energy_total as energy_total_begin
+from 		pvdata pv 
+where 		not exists(	select 	1 
+						from 	pvdata pv2 
+						where 	pv2.device_sn = pv.device_sn 
+						and 	pv2.created_at between pv.created_at + interval '1 minute' and pv.created_at + interval '6 minutes')
+), 
+pvgaps as (
+select 		pgb.device_sn, 
+			pgb.gap_begin,
+			pgb.power_now_begin,
+			pgb.energy_today_begin,
+			pgb.energy_total_begin,
+			min(pge.created_at) as gap_end, 
+			round(extract(epoch from min(pge.created_at) - pgb.gap_begin) / 60) as gap_minutes,
+			round(round(extract(epoch from min(pge.created_at) - pgb.gap_begin) / 60) / 5) - 1 as qty_fillers
+from 		pvgapbegin pgb
+inner join 	pvdata pge 
+	on 		pgb.device_sn = pge.device_sn 
+		and pge.created_at > pgb.gap_begin 
+group by 	pgb.device_sn, pgb.gap_begin, pgb.power_now_begin, pgb.energy_today_begin, pgb.energy_total_begin
+order by 	pgb.device_sn, pgb.gap_begin, pgb.power_now_begin, pgb.energy_today_begin, pgb.energy_total_begin
+), pvalldata as (
+select 		pvg.device_sn, 
+			pvg.gap_begin, 
+			pvg.power_now_begin,
+			pvg.energy_today_begin,
+			pvg.energy_total_begin,
+			pvg.gap_end,
+			pd.power_now as power_now_end,
+			pd.energy_today as energy_today_end,
+			pd.energy_total as energy_total_end,
+			pvg.qty_fillers
+from 		pvgaps pvg
+inner join	pvdata pd on pd.device_sn = pvg.device_sn and pd.created_at = pvg.gap_end
+), pvdataready as (
+select		pvad.device_sn,
+			round((pvad.power_now_begin + pvad.power_now_end) / 2) as power_now,
+			round(pvad.energy_today_begin + (((pvad.energy_today_end - pvad.energy_today_begin) / (pvad.qty_fillers+1)) * gs),1) as energy_today,
+			round(pvad.energy_total_begin + (((pvad.energy_total_end - pvad.energy_total_begin) / (pvad.qty_fillers+1)) * gs),1) as energy_total,
+			pvad.gap_begin + ((5*gs) * interval '1 minute') as created_at
+from 		pvalldata pvad
+cross join lateral generate_series(1, pvad.qty_fillers) gs
+)
+insert into pvstatsdetail (device_sn, power_now, power_today, power_total, created_at)
+select pdr.device_sn, pdr.power_now, pdr.energy_today, pdr.energy_total, pdr.created_at from pvdataready pdr";
+
+        $result = pg_query($db, $query);
+
+        $cmdtuples = pg_affected_rows($result);
+
+        // Close the connection to the database
+        pg_close($db);
+
+        return $cmdtuples;
+    }
+
+    function reprocess_fix_incomplete_data() {
+        global $db_host, $db_port, $db_name, $db_user, $db_pass;
+        global $powerplant_timezone;
+
+        // Connect to the Postgres database "deye_data", using username and password
+        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+
+        // Get distinct dates from pvstatsdetail table
+        $query = "SELECT DISTINCT ((created_at at time zone 'UTC') at time zone '$powerplant_timezone')::date as reference_date FROM pvstatsdetail ORDER BY reference_date;";
+        $result = pg_query($db, $query);
+
+        // Fetch all distinct dates
+        $dates = pg_fetch_all($result);
+
+        // Close the connection to the database
+        pg_close($db);
+
+        // Loop through each date and call fix_incomplete_data
+        foreach ($dates as $date) {
+            $ref_date = new DateTime($date['reference_date']);
+            $affected_rows = fix_incomplete_data($ref_date);
+            echo "<p>Processed date " . $date['reference_date'] . ", affected rows: " . $affected_rows . "</p>\n";
+        }
+    }
+
+
+
+
 ?>

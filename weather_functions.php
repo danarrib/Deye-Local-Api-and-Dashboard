@@ -10,31 +10,6 @@
         $response = curl_exec($ch);
         curl_close($ch);
 
-        /*
-        API Will return data in the following format (only the important parts shown):
-        {
-            "current": {
-                "temperature_2m": 15.4,
-                "weather_code": 3
-            }
-        }
-        */
-
-        /*
-        We need to build an object like this:
-        {
-            "temperature": 15,
-            "condition": "clear",
-            "is_clear": true,
-            "is_cloudy": false,
-            "is_rainy": false,
-            "is_snowy": false,
-            "is_stormy": false,
-            "is_foggy": false,
-            "created_at": "2024-06-01T12:34:56Z"
-        }
-        */
-
         $retObj = new stdClass();
         $data = json_decode($response, true);
         // Temperature is in Celsius, and should be an Integer
@@ -46,23 +21,6 @@
         $retObj->is_stormy = false;
         $retObj->is_foggy = false;
         $weather_code = $data['current']['weather_code'];
-
-        /*
-        Code	    Description
-        0	        Clear sky
-        1, 2, 3	    Mainly clear, partly cloudy, and overcast
-        45, 48	    Fog and depositing rime fog
-        51, 53, 55	Drizzle: Light, moderate, and dense intensity
-        56, 57	    Freezing Drizzle: Light and dense intensity
-        61, 63, 65	Rain: Slight, moderate and heavy intensity
-        66, 67	    Freezing Rain: Light and heavy intensity
-        71, 73, 75	Snow fall: Slight, moderate, and heavy intensity
-        77	        Snow grains
-        80, 81, 82	Rain showers: Slight, moderate, and violent
-        85, 86	    Snow showers slight and heavy
-        95 *	    Thunderstorm: Slight or moderate
-        96, 99 *	Thunderstorm with slight and heavy hail
-        */
 
         if (in_array($weather_code, [0, 1])) {
             $retObj->condition = $weather_code == 0 ? "clear sky" : "mainly clear";
@@ -235,47 +193,6 @@
     }
 
     function returnWeatherIcon($condition) {
-        /*
-        List of all possible values for condition:
-        clear sky
-        mainly clear
-        partly cloudy
-        overcast
-        foggy
-        light drizzle
-        moderate drizzle
-        dense drizzle
-        light freezing drizzle
-        dense freezing drizzle
-        slight rain
-        moderate rain
-        heavy rain
-        light freezing rain
-        heavy freezing rain
-        slight rain showers
-        moderate rain showers
-        violent rain showers
-        slight snowfall
-        moderate snowfall
-        heavy snowfall
-        snow grains
-        slight snow showers
-        heavy snow showers
-        slight thunderstorm
-        moderate thunderstorm
-        heavy thunderstorm
-        unknown
-
-        Possible return values:
-        clear
-        cloudy
-        rainy
-        snowy
-        stormy
-        foggy
-        unknown
-        */
-        
         switch ($condition) {
             case "clear sky":
             case "mainly clear":
