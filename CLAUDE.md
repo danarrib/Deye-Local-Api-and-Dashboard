@@ -27,7 +27,7 @@ No test suite or linter is configured.
 
 **Key files:**
 - `functions.php` — Central config (inverter IPs, credentials, timezone, Telegram token, lat/lon) and core logic (data fetching, sunrise/sunset calc, GD-based chart generation)
-- `db_functions.php` — All PostgreSQL operations using `pg_*` functions; auto-creates schema on first run
+- `db_functions.php` — All PostgreSQL operations using `pg_*` functions; auto-creates schema on first run; includes gap-filling logic (`fix_incomplete_data`) that interpolates missing 5-minute data points
 - `crontasks.php` — Entry point for the cron job; orchestrates data collection, weather fetch, and sunset-triggered Telegram reports
 - `deye.php` — REST API endpoint for single-inverter queries (params: ipaddress, username, password)
 - `overall.php` — JSON API returning aggregated data (power, weather, charts) for the dashboard
@@ -35,7 +35,7 @@ No test suite or linter is configured.
 - `weather_functions.php` — Open-Meteo API integration with WMO weather code mapping
 - `index.html` — Dashboard UI (vanilla JS + Bootstrap, calls overall.php)
 
-**Data flow:** Cron (every 5 min) → fetch from inverters via HTTP Basic Auth → store in PostgreSQL → at sunset, generate PNG chart with GD library → send to Telegram.
+**Data flow:** Cron (every 5 min) → fetch from inverters via HTTP Basic Auth → store in PostgreSQL → fill gaps in time-series data (interpolation) → at sunset, generate PNG chart with GD library → send to Telegram.
 
 **Database tables:** `pvstatsdetail` (time-series power data), `inverter_details` (inverter metadata), `weather_info` (weather conditions).
 
