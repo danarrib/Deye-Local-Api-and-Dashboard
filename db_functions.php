@@ -20,23 +20,38 @@
         $query = "CREATE INDEX IF NOT EXISTS device_sn_idx ON pvstatsdetail (device_sn)";
         $result = pg_query($db, $query);
 
-        // Create a table for storing the inverter details
-        $query = "CREATE TABLE IF NOT EXISTS inverter_details (
-            id BIGSERIAL PRIMARY KEY NOT NULL,
-            device_sn VARCHAR(30) NOT NULL,
-            friendly_name VARCHAR(100) NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL,
-            last_ip_address VARCHAR(45) NOT NULL
-        )";
-        $result = pg_query($db, $query);
+        // Migrate inverter_details -> inverters, or create inverters table for fresh installs
+        $check = pg_query($db, "SELECT to_regclass('public.inverter_details') IS NOT NULL AS exists_old,
+                                       to_regclass('public.inverters') IS NOT NULL AS exists_new");
+        $row = pg_fetch_assoc($check);
 
-        // Create a unique index for the device_sn column
-        $query = "CREATE UNIQUE INDEX IF NOT EXISTS device_sn_uniq ON inverter_details (device_sn)";
-        $result = pg_query($db, $query);
-
-        // Add an "order" field to the inverter_details table if it doesn't already exists
-        $query = "ALTER TABLE inverter_details ADD COLUMN IF NOT EXISTS \"order\" INT";
-        $result = pg_query($db, $query);
+        if ($row['exists_old'] === 't' && $row['exists_new'] === 'f') {
+            // Existing installation: rename and add new columns
+            pg_query($db, "ALTER TABLE inverter_details RENAME TO inverters");
+            pg_query($db, "ALTER TABLE inverters RENAME COLUMN last_ip_address TO ip_address");
+            pg_query($db, "ALTER TABLE inverters ALTER COLUMN ip_address TYPE VARCHAR(100)");
+            pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS username VARCHAR(50) NOT NULL DEFAULT 'admin'");
+            pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS password VARCHAR(50) NOT NULL DEFAULT 'admin'");
+            pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS \"order\" INT");
+        } elseif ($row['exists_new'] === 'f') {
+            // Fresh install: create inverters table directly
+            $query = "CREATE TABLE IF NOT EXISTS inverters (
+                id BIGSERIAL PRIMARY KEY NOT NULL,
+                device_sn VARCHAR(30) NOT NULL,
+                friendly_name VARCHAR(100) NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL,
+                ip_address VARCHAR(100) NOT NULL,
+                username VARCHAR(50) NOT NULL DEFAULT 'admin',
+                password VARCHAR(50) NOT NULL DEFAULT 'admin',
+                \"order\" INT
+            )";
+            pg_query($db, $query);
+            pg_query($db, "CREATE UNIQUE INDEX IF NOT EXISTS device_sn_uniq ON inverters (device_sn)");
+        } else {
+            // inverters table already exists, ensure new columns are present
+            pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS username VARCHAR(50) NOT NULL DEFAULT 'admin'");
+            pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS password VARCHAR(50) NOT NULL DEFAULT 'admin'");
+        }
 
         // Create a unique index for the device_sn column
         $query = "CREATE INDEX IF NOT EXISTS idx_pvstatsdetail_created_at ON pvstatsdetail (created_at)";
@@ -58,6 +73,28 @@
         )";
         $result = pg_query($db, $query);
 
+        // Create the users table for admin authentication
+        $query = "CREATE TABLE IF NOT EXISTS users (
+            id BIGSERIAL PRIMARY KEY NOT NULL,
+            username VARCHAR(50) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            user_type VARCHAR(20) NOT NULL DEFAULT 'admin',
+            created_at TIMESTAMPTZ NOT NULL
+        )";
+        pg_query($db, $query);
+
+        // Create the powerplant settings table
+        $query = "CREATE TABLE IF NOT EXISTS powerplant (
+            id BIGSERIAL PRIMARY KEY NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            timezone VARCHAR(50) NOT NULL,
+            latitude DOUBLE PRECISION NOT NULL,
+            longitude DOUBLE PRECISION NOT NULL,
+            telegram_token VARCHAR(255),
+            telegram_chat_id VARCHAR(50)
+        )";
+        pg_query($db, $query);
+
         // Close the connection to the database
         pg_close($db);
     }
@@ -77,10 +114,10 @@
         $query = "INSERT INTO pvstatsdetail (device_sn, power_now, power_today, power_total, created_at) VALUES ($1, $2, $3, $4, $5)";
         $result = pg_query_params($db, $query, array($data['device_sn'], $data['power_now'], $data['power_today'], $data['power_total'], $data['timestamp']));
 
-        // Upsert data into the inverter_details table
-        $query = "INSERT INTO inverter_details (device_sn, friendly_name, created_at, last_ip_address, \"order\") VALUES ($1, $2, $3, $4, $5)
-                  ON CONFLICT (device_sn) DO UPDATE SET friendly_name = $2, created_at = $3, last_ip_address = $4, \"order\" = $5";
-        $result = pg_query_params($db, $query, array($data['device_sn'], $data['friendly_name'], $data['timestamp'], $data['last_ip_address'], $data['order']));
+        // Upsert data into the inverters table
+        $query = "INSERT INTO inverters (device_sn, friendly_name, created_at, ip_address, \"order\") VALUES ($1, $2, $3, $4, $5)
+                  ON CONFLICT (device_sn) DO UPDATE SET friendly_name = $2, created_at = $3, ip_address = $4, \"order\" = $5";
+        $result = pg_query_params($db, $query, array($data['device_sn'], $data['friendly_name'], $data['timestamp'], $data['ip_address'], $data['order']));
 
         // Close the connection to the database
         pg_close($db);
@@ -102,7 +139,7 @@
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
         // Get the latest data for today
-        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverter_details idet on pd.device_sn = idet.device_sn WHERE pd.created_at at time zone 'UTC' between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
+        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverters idet on pd.device_sn = idet.device_sn WHERE pd.created_at at time zone 'UTC' between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
 
         $result = pg_query_params($db, $query, array($start_utc->format('Y-m-d H:i:sO'), $end_utc->format('Y-m-d H:i:sO')));
 
@@ -135,7 +172,7 @@
     ) AS interval_start
 )
 SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.power_today, idet.friendly_name, idet.order
-FROM inverter_details idet
+FROM inverters idet
 left join time_intervals ti ON true
 LEFT JOIN LATERAL (
     SELECT DISTINCT ON (device_sn) *
@@ -450,8 +487,15 @@ where not exists (
             echo "<p>Processed date " . $date['reference_date'] . ", affected rows: " . $affected_rows . "</p>\n";
         }
     }
+    function resolve_pending_inverter($device_sn, $ip_address) {
+        global $db_host, $db_port, $db_name, $db_user, $db_pass;
 
-
-
+        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
+        pg_query_params($db,
+            "UPDATE inverters SET device_sn = $1 WHERE ip_address = $2 AND device_sn LIKE 'PENDING_%'",
+            array($device_sn, $ip_address)
+        );
+        pg_close($db);
+    }
 
 ?>

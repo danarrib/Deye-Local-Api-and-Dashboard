@@ -29,19 +29,31 @@ This is what is already working:
 
 ## How to set up
 
+### Option 1: Docker Compose (Recommended)
+
 1. Get a Linux machine running on the local network
+2. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+3. Clone this repository and enter the directory
+4. Run `docker compose up -d`
+5. Open `http://localhost:8080/admin/` in your browser
+6. The setup wizard will guide you through:
+   - Creating an admin account
+   - Configuring your power plant settings (name, timezone, location)
+   - Adding your inverters (IP address, credentials)
+   - Optionally setting up Telegram daily reports
 
-2. Install Postgres, Apache, PHP
+The database is automatically configured via environment variables in `docker-compose.yml`. Data collection runs every 5 minutes via the built-in cron service.
 
-3. Set up a new user and a new database on Postgres
+### Option 2: Manual Installation
 
-4. Create a new directory called `deye_api` inside an apache exposed directory (usually `/var/www/html/`)
-
-5. Copy to that directory all the files of this repository
-
-6. Edit the `functions.php` file and change the settings according to your database and powerplant configuration
-
-7. Add a Cron job to run the `crontasks.php` file every 5 minutes (run `crontab -e` and add a new line at the end of the file with `*/5 * * * * php /var/www/html/deye_api/crontasks.php`)
+1. Get a Linux machine running on the local network
+2. Install PostgreSQL, Apache, PHP (with `php-pgsql` and `php-curl` extensions)
+3. Set up a new user and a new database on PostgreSQL
+4. Create a new directory called `deye_api` inside an Apache exposed directory (usually `/var/www/html/`)
+5. Copy all the files of this repository to that directory
+6. Open `http://localhost/deye_api/admin/` in your browser
+7. The setup wizard will guide you through database connection, admin account creation, and all other settings
+8. Add a cron job to run the `crontasks.php` file every 5 minutes (run `crontab -e` and add `*/5 * * * * php /var/www/html/deye_api/crontasks.php`)
 
 ## How to use
 
@@ -57,7 +69,7 @@ Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin
 
 Replace on the above URL the parameters with your inverter specific details.
 
-If you plan to use only the API, you don't need to set up anything on the `function.php` file, and you don't need a database.
+If you plan to use only the API, you don't need to run the setup wizard, and you don't need a database.
 
 #### Data Structure example
 
@@ -96,9 +108,9 @@ This program does exactly that: Parses the `status.html` file and get the follow
 * Energy produced in total (in Kilowatts-Hour)
 
 ## Project requirements
-* Backend uses only PHP and Postgres
+* Backend uses only vanilla PHP and PostgreSQL (no frameworks, no Composer)
 * UI uses [Bootstrap](https://github.com/twbs/bootstrap) and [Chart.js](https://github.com/chartjs/Chart.js) libraries only
-* No fancy Frameworks to bloat the application. No Package managers, nothing. Just plain HTML, Javascript and PHP. This project is intended to be simple.
+* No fancy frameworks to bloat the application. No package managers, nothing. Just plain HTML, JavaScript, and PHP. This project is intended to be simple.
 
 ## Development roadmap
 Here's a list of new features I wish to add to this project in the future:
@@ -111,6 +123,6 @@ Here's a list of new features I wish to add to this project in the future:
   - Energy Total (kWh)
 - [ ] Get Inverter Temperature (Celsius)
 - [x] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
-- [ ] Configuration UI (as it is now, the configuration is stored on the `function.php` file)
+- [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
 - [x] Make it work as a Docker compose package, to make set up easier for everyone
 - [x] Support Dark mode

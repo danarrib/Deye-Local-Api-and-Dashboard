@@ -3,41 +3,42 @@
     ini_set('display_startup_errors', '1');
     error_reporting(E_ALL ^ E_DEPRECATED);
 
-    // ==== You are free to edit below this line ====
- 
-    $powerplant_timezone = 'America/Sao_Paulo'; // Used for displaying the local time, IANA timezone format (https://nodatime.org/TimeZones)
-    $powerplant_name = "My Power Plant"; // Used for displaying the powerplant name
-    $powerplant_latitude = -23.5; // Program use coordinates to know the exact time for sunrise and sunset
-    $powerplant_longitude = -46.6;
+    // Load database configuration
+    require_once __DIR__ . '/config_loader.php';
 
-    $telegram_token = "your_token_here"; // The token of the Telegram bot
-    $telegram_chatId = "chat_id_here"; // The Chat ID or Group ID where the bot will send messages
-
-    // Don't forget to set the inverters to not use dynamic IPs. Set the IPs statically.
-    // Add as many inverters as you need
-    $inverter_list = array(
-        array("ipaddress" => "192.168.15.201", "username" => "admin", "password" => "admin", "friendly_name" => "North A"),
-        array("ipaddress" => "192.168.15.202", "username" => "admin", "password" => "admin", "friendly_name" => "North B"),
-        array("ipaddress" => "192.168.15.203", "username" => "admin", "password" => "admin", "friendly_name" => "South A"),
-        array("ipaddress" => "192.168.15.204", "username" => "admin", "password" => "admin", "friendly_name" => "South B"),
-        array("ipaddress" => "192.168.15.205", "username" => "admin", "password" => "admin", "friendly_name" => "South C"),
-    );
-
-    // ==== Do not edit below this line ====
-
-    $db_host = getenv('DB_HOST') ?: 'localhost';
-    $db_user = getenv('DB_USER') ?: 'deye_user';
-    $db_pass = getenv('DB_PASS') ?: 'deye123@';
-    $db_name = getenv('DB_NAME') ?: 'deye_data';
-    $db_port = "5432";
+    $db_config = load_db_config();
+    if ($db_config) {
+        $db_host = $db_config['host'];
+        $db_port = $db_config['port'];
+        $db_name = $db_config['dbname'];
+        $db_user = $db_config['user'];
+        $db_pass = $db_config['password'];
+    } else {
+        $db_host = getenv('DB_HOST') ?: 'localhost';
+        $db_user = getenv('DB_USER') ?: 'deye_user';
+        $db_pass = getenv('DB_PASS') ?: 'deye123@';
+        $db_name = getenv('DB_NAME') ?: 'deye_data';
+        $db_port = '5432';
+    }
 
     include_once 'db_functions.php';
     include_once 'weather_functions.php';
     include_once 'telegram_functions.php';
 
-    $processStartDateTime = new DateTime(null, new DateTimeZone($powerplant_timezone));
-
     setup_db();
+
+    // Load settings from database, with hardcoded fallbacks
+    $powerplant_settings = load_powerplant_settings();
+    $powerplant_timezone = $powerplant_settings['timezone'] ?? 'America/Sao_Paulo';
+    $powerplant_name = $powerplant_settings['name'] ?? 'My Power Plant';
+    $powerplant_latitude = $powerplant_settings['latitude'] ?? -23.5;
+    $powerplant_longitude = $powerplant_settings['longitude'] ?? -46.6;
+    $telegram_token = $powerplant_settings['telegram_token'] ?? '';
+    $telegram_chatId = $powerplant_settings['telegram_chat_id'] ?? '';
+
+    $inverter_list = load_inverter_list();
+
+    $processStartDateTime = new DateTime(null, new DateTimeZone($powerplant_timezone));
 
     function get_inverter_data($ipaddress, $username, $password) {
         // Try to fetch the contents of http://{ipaddress}/status.html, using the provided username and password (simple http authentication)
@@ -163,9 +164,10 @@
             }
 
             $data["friendly_name"] = $inverter['friendly_name'];
-            $data["last_ip_address"] = $inverter['ipaddress'];
+            $data["ip_address"] = $inverter['ipaddress'];
             $data["order"] = $order;
 
+            resolve_pending_inverter($data['device_sn'], $inverter['ipaddress']);
             save_inverter_data($data);
         }
 

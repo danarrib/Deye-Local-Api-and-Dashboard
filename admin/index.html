@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Deye Solar Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="icon" type="image/png" href="../img/favicon.png">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg bg-body-tertiary mb-4" id="main-navbar" style="display:none;">
+    <div class="container">
+        <a class="navbar-brand" href="#">Deye Admin</a>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container" style="max-width: 720px;">
+
+    <!-- Alert area -->
+    <div id="alert-area"></div>
+
+    <!-- Section: Database Setup -->
+    <div id="section-db-setup" class="section" style="display:none;">
+        <h3 class="mb-3">Database Setup</h3>
+        <p class="text-muted">Configure your PostgreSQL connection to get started.</p>
+        <form id="form-db-setup" onsubmit="return submitDbSetup(event)">
+            <div class="mb-3">
+                <label for="db-host" class="form-label">Host</label>
+                <input type="text" class="form-control" id="db-host" value="localhost" required>
+            </div>
+            <div class="mb-3">
+                <label for="db-port" class="form-label">Port</label>
+                <input type="number" class="form-control" id="db-port" value="5432" required>
+            </div>
+            <div class="mb-3">
+                <label for="db-name" class="form-label">Database Name</label>
+                <input type="text" class="form-control" id="db-name" required>
+            </div>
+            <div class="mb-3">
+                <label for="db-user" class="form-label">Username</label>
+                <input type="text" class="form-control" id="db-user" required>
+            </div>
+            <div class="mb-3">
+                <label for="db-pass" class="form-label">Password</label>
+                <input type="password" class="form-control" id="db-pass">
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-db-setup">Test &amp; Save</button>
+        </form>
+    </div>
+
+    <!-- Section: Admin Account Setup -->
+    <div id="section-admin-setup" class="section" style="display:none;">
+        <h3 class="mb-3">Create Admin Account</h3>
+        <p class="text-muted">No admin account found. Create one to get started.</p>
+        <form id="form-admin-setup" onsubmit="return submitAdminSetup(event)">
+            <div class="mb-3">
+                <label for="admin-username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="admin-username" required>
+            </div>
+            <div class="mb-3">
+                <label for="admin-password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="admin-password" minlength="6" required>
+            </div>
+            <div class="mb-3">
+                <label for="admin-password-confirm" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="admin-password-confirm" minlength="6" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-admin-setup">Create Account</button>
+        </form>
+    </div>
+
+    <!-- Section: Login -->
+    <div id="section-login" class="section" style="display:none;">
+        <h3 class="mb-3">Admin Login</h3>
+        <form id="form-login" onsubmit="return submitLogin(event)">
+            <div class="mb-3">
+                <label for="login-username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="login-username" required>
+            </div>
+            <div class="mb-3">
+                <label for="login-password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="login-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-login">Login</button>
+        </form>
+    </div>
+
+    <!-- Section: Dashboard (Settings + Inverters) -->
+    <div id="section-dashboard" class="section" style="display:none;">
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-settings" data-bs-toggle="tab" data-bs-target="#pane-settings" type="button" role="tab">Power Plant Settings</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-inverters" data-bs-toggle="tab" data-bs-target="#pane-inverters" type="button" role="tab">Inverters</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Settings Tab -->
+            <div class="tab-pane fade show active" id="pane-settings" role="tabpanel">
+                <form id="form-settings" onsubmit="return submitSettings(event)">
+                    <div class="mb-3">
+                        <label for="setting-name" class="form-label">Power Plant Name</label>
+                        <input type="text" class="form-control" id="setting-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="setting-timezone" class="form-label">Timezone</label>
+                        <select class="form-select" id="setting-timezone" required></select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="setting-latitude" class="form-label">Latitude</label>
+                            <input type="number" step="any" class="form-control" id="setting-latitude" required>
+                        </div>
+                        <div class="col">
+                            <label for="setting-longitude" class="form-label">Longitude</label>
+                            <input type="number" step="any" class="form-control" id="setting-longitude" required>
+                        </div>
+                        <div class="col-auto d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-secondary" onclick="detectLocation()">Detect Location</button>
+                        </div>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Telegram Notifications</h5>
+                    <p class="text-muted small mb-3">Daily reports with power generation charts will be sent to a Telegram chat. Leave blank to disable.</p>
+                    <div class="mb-3">
+                        <label for="setting-telegram-token" class="form-label">Bot Token</label>
+                        <input type="text" class="form-control" id="setting-telegram-token" placeholder="Optional" oninput="onTelegramTokenChange()">
+                        <div class="form-text">Open Telegram, search for <strong>@BotFather</strong>, send <code>/newbot</code>, follow the prompts, and copy the token it gives you.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="setting-telegram-chatid" class="form-label">Chat ID</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="setting-telegram-chatid" placeholder="Optional">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-detect-chatid" onclick="detectChatId()" style="display:none;">Detect Chat ID</button>
+                            <button type="button" class="btn btn-outline-info" id="btn-test-telegram" onclick="sendTestMessage()" style="display:none;">Send Test Message</button>
+                        </div>
+                        <div class="form-text" id="telegram-chatid-help">Add your bot to a group or start a chat with it, then send a message.</div>
+                        <div id="telegram-chatid-actions" style="display:none;">
+                            <div class="form-text">Send a message to your bot, then click <strong>Detect Chat ID</strong> to fill this field automatically.</div>
+                        </div>
+                        <div id="telegram-detect-result" class="mt-2"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+                </form>
+            </div>
+
+            <!-- Inverters Tab -->
+            <div class="tab-pane fade" id="pane-inverters" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Configured Inverters</h5>
+                    <button class="btn btn-primary btn-sm" onclick="openInverterModal()">Add Inverter</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>IP Address</th>
+                                <th>Username</th>
+                                <th>Password</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inverter-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                <p id="no-inverters-msg" class="text-muted" style="display:none;">No inverters configured yet.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Inverter Modal -->
+<div class="modal fade" id="inverterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inverterModalTitle">Add Inverter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="inverter-edit-id">
+                <div class="mb-3">
+                    <label for="inverter-name" class="form-label">Friendly Name</label>
+                    <input type="text" class="form-control" id="inverter-name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="inverter-ip" class="form-label">IP Address / Hostname</label>
+                    <input type="text" class="form-control" id="inverter-ip" required>
+                </div>
+                <div class="mb-3">
+                    <label for="inverter-username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="inverter-username" value="admin">
+                </div>
+                <div class="mb-3">
+                    <label for="inverter-password" class="form-label">Password</label>
+                    <input type="text" class="form-control" id="inverter-password" value="admin">
+                </div>
+                <div id="inverter-test-result"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-info" onclick="testInverter()" id="btn-test-inverter">Test Connection</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveInverter()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+<script>
+const API_BASE = 'api.php';
+let inverterModal;
+
+document.addEventListener('DOMContentLoaded', () => {
+    inverterModal = new bootstrap.Modal(document.getElementById('inverterModal'));
+    init();
+});
+
+// ─── Init ───────────────────────────────────────────────────────────────────
+
+async function init() {
+    try {
+        const status = await apiGet('status');
+
+        if (status.status === 'needs-db-config') {
+            showSection('db-setup');
+            return;
+        }
+
+        if (status.status === 'needs-admin') {
+            showSection('admin-setup');
+            return;
+        }
+
+        // System is ready — check auth
+        const token = localStorage.getItem('deye_admin_token');
+        if (!token) {
+            showSection('login');
+            return;
+        }
+
+        // Validate token
+        const resp = await fetch(`${API_BASE}?action=settings`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!resp.ok) {
+            localStorage.removeItem('deye_admin_token');
+            showSection('login');
+            return;
+        }
+
+        showDashboard();
+    } catch (e) {
+        showAlert('Failed to connect to the server.', 'danger');
+    }
+}
+
+// ─── Section Management ─────────────────────────────────────────────────────
+
+function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.getElementById('main-navbar').style.display = 'none';
+    document.getElementById(`section-${name}`).style.display = 'block';
+}
+
+function showDashboard() {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.getElementById('main-navbar').style.display = '';
+    document.getElementById('section-dashboard').style.display = 'block';
+    loadTimezones();
+    loadSettings();
+    loadInverters();
+}
+
+// ─── Alerts ─────────────────────────────────────────────────────────────────
+
+function showAlert(message, type = 'danger') {
+    const area = document.getElementById('alert-area');
+    area.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`;
+}
+
+function clearAlerts() {
+    document.getElementById('alert-area').innerHTML = '';
+}
+
+// ─── API Helpers ────────────────────────────────────────────────────────────
+
+function getToken() {
+    return localStorage.getItem('deye_admin_token');
+}
+
+async function apiGet(action) {
+    const headers = {};
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const resp = await fetch(`${API_BASE}?action=${action}`, { headers });
+    return resp.json();
+}
+
+async function apiPost(action, body, extraParams = '') {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const resp = await fetch(`${API_BASE}?action=${action}${extraParams}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+    });
+    return { ok: resp.ok, data: await resp.json() };
+}
+
+async function apiPut(action, id, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const resp = await fetch(`${API_BASE}?action=${action}&id=${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+    });
+    return { ok: resp.ok, data: await resp.json() };
+}
+
+async function apiDelete(action, id) {
+    const headers = {};
+    const token = getToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const resp = await fetch(`${API_BASE}?action=${action}&id=${id}`, {
+        method: 'DELETE',
+        headers
+    });
+    return { ok: resp.ok, data: await resp.json() };
+}
+
+// ─── Database Setup ─────────────────────────────────────────────────────────
+
+async function submitDbSetup(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const btn = document.getElementById('btn-db-setup');
+    btn.disabled = true;
+    btn.textContent = 'Testing...';
+
+    const { ok, data } = await apiPost('setup-db', {
+        host: document.getElementById('db-host').value,
+        port: document.getElementById('db-port').value,
+        dbname: document.getElementById('db-name').value,
+        user: document.getElementById('db-user').value,
+        password: document.getElementById('db-pass').value
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Test & Save';
+
+    if (ok) {
+        showSection('admin-setup');
+    } else {
+        showAlert(data.error || 'Connection failed');
+    }
+    return false;
+}
+
+// ─── Admin Setup ────────────────────────────────────────────────────────────
+
+async function submitAdminSetup(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const password = document.getElementById('admin-password').value;
+    const confirm = document.getElementById('admin-password-confirm').value;
+
+    if (password !== confirm) {
+        showAlert('Passwords do not match');
+        return false;
+    }
+
+    const btn = document.getElementById('btn-admin-setup');
+    btn.disabled = true;
+
+    const { ok, data } = await apiPost('setup-admin', {
+        username: document.getElementById('admin-username').value,
+        password: password
+    });
+
+    btn.disabled = false;
+
+    if (ok) {
+        showAlert('Admin account created. Please log in.', 'success');
+        showSection('login');
+    } else {
+        showAlert(data.error || 'Failed to create account');
+    }
+    return false;
+}
+
+// ─── Login ──────────────────────────────────────────────────────────────────
+
+async function submitLogin(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+
+    const { ok, data } = await apiPost('login', {
+        username: document.getElementById('login-username').value,
+        password: document.getElementById('login-password').value
+    });
+
+    btn.disabled = false;
+
+    if (ok && data.token) {
+        localStorage.setItem('deye_admin_token', data.token);
+        showDashboard();
+    } else {
+        showAlert(data.error || 'Login failed');
+    }
+    return false;
+}
+
+function logout() {
+    localStorage.removeItem('deye_admin_token');
+    showSection('login');
+}
+
+// ─── Settings ───────────────────────────────────────────────────────────────
+
+let timezonesLoaded = false;
+
+async function loadTimezones() {
+    if (timezonesLoaded) return;
+
+    const data = await apiGet('timezones');
+    const select = document.getElementById('setting-timezone');
+    select.innerHTML = '';
+
+    data.timezones.forEach(tz => {
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz;
+        select.appendChild(opt);
+    });
+
+    timezonesLoaded = true;
+}
+
+async function loadSettings() {
+    await loadTimezones();
+
+    const data = await apiGet('settings');
+    const tzSelect = document.getElementById('setting-timezone');
+
+    if (data && data.name) {
+        document.getElementById('setting-name').value = data.name;
+        tzSelect.value = data.timezone;
+        document.getElementById('setting-latitude').value = data.latitude;
+        document.getElementById('setting-longitude').value = data.longitude;
+        document.getElementById('setting-telegram-token').value = data.telegram_token || '';
+        document.getElementById('setting-telegram-chatid').value = data.telegram_chat_id || '';
+        onTelegramTokenChange();
+    } else {
+        // Pre-select browser timezone for new setup
+        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (browserTz) {
+            tzSelect.value = browserTz;
+        }
+    }
+}
+
+async function submitSettings(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const btn = document.getElementById('btn-save-settings');
+    btn.disabled = true;
+
+    const { ok, data } = await apiPost('settings', {
+        name: document.getElementById('setting-name').value,
+        timezone: document.getElementById('setting-timezone').value,
+        latitude: parseFloat(document.getElementById('setting-latitude').value),
+        longitude: parseFloat(document.getElementById('setting-longitude').value),
+        telegram_token: document.getElementById('setting-telegram-token').value,
+        telegram_chat_id: document.getElementById('setting-telegram-chatid').value
+    });
+
+    btn.disabled = false;
+
+    if (ok) {
+        showAlert('Settings saved successfully.', 'success');
+    } else {
+        showAlert(data.error || 'Failed to save settings');
+    }
+    return false;
+}
+
+function detectLocation() {
+    if (!navigator.geolocation) {
+        showAlert('Geolocation is not supported by your browser');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            document.getElementById('setting-latitude').value = position.coords.latitude.toFixed(6);
+            document.getElementById('setting-longitude').value = position.coords.longitude.toFixed(6);
+        },
+        (error) => {
+            showAlert('Could not detect location: ' + error.message);
+        }
+    );
+}
+
+// ─── Telegram ───────────────────────────────────────────────────────────────
+
+function onTelegramTokenChange() {
+    const token = document.getElementById('setting-telegram-token').value.trim();
+    const actionsDiv = document.getElementById('telegram-chatid-actions');
+    const link = document.getElementById('telegram-getupdates-link');
+    const resultDiv = document.getElementById('telegram-detect-result');
+    const btnDetect = document.getElementById('btn-detect-chatid');
+    const btnTest = document.getElementById('btn-test-telegram');
+
+    if (token) {
+        actionsDiv.style.display = '';
+        btnDetect.style.display = '';
+        btnTest.style.display = '';
+        link.href = `https://api.telegram.org/bot${encodeURIComponent(token)}/getUpdates`;
+    } else {
+        actionsDiv.style.display = 'none';
+        btnDetect.style.display = 'none';
+        btnTest.style.display = 'none';
+    }
+    resultDiv.innerHTML = '';
+}
+
+async function detectChatId() {
+    const token = document.getElementById('setting-telegram-token').value.trim();
+    const resultDiv = document.getElementById('telegram-detect-result');
+    const btn = document.getElementById('btn-detect-chatid');
+
+    if (!token) {
+        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Bot Token first.</div>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Detecting...';
+    resultDiv.innerHTML = '';
+
+    const { ok, data } = await apiPost('telegram-getupdates', { token });
+
+    btn.disabled = false;
+    btn.textContent = 'Detect Chat ID';
+
+    if (!ok) {
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || 'Failed to reach Telegram API')}</div>`;
+        return;
+    }
+
+    if (!data.chats || data.chats.length === 0) {
+        resultDiv.innerHTML = '<div class="alert alert-warning py-2">No chats found. Send a message to your bot first, then try again.</div>';
+        return;
+    }
+
+    if (data.chats.length === 1) {
+        document.getElementById('setting-telegram-chatid').value = data.chats[0].id;
+        resultDiv.innerHTML = `<div class="alert alert-success py-2">Chat ID detected: <strong>${escapeHtml(String(data.chats[0].id))}</strong> (${escapeHtml(data.chats[0].name)})</div>`;
+        return;
+    }
+
+    // Multiple chats found — let user pick
+    let html = '<div class="alert alert-info py-2">Multiple chats found. Click to select:</div><div class="list-group mt-1">';
+    data.chats.forEach(chat => {
+        html += `<button type="button" class="list-group-item list-group-item-action py-2" onclick="selectChatId('${escapeHtml(String(chat.id))}')">
+            <strong>${escapeHtml(chat.name)}</strong> <span class="text-muted">(${escapeHtml(String(chat.id))})</span>
+        </button>`;
+    });
+    html += '</div>';
+    resultDiv.innerHTML = html;
+}
+
+function selectChatId(id) {
+    document.getElementById('setting-telegram-chatid').value = id;
+    document.getElementById('telegram-detect-result').innerHTML = `<div class="alert alert-success py-2">Chat ID set to <strong>${escapeHtml(id)}</strong></div>`;
+}
+
+async function sendTestMessage() {
+    const token = document.getElementById('setting-telegram-token').value.trim();
+    const chatId = document.getElementById('setting-telegram-chatid').value.trim();
+    const resultDiv = document.getElementById('telegram-detect-result');
+    const btn = document.getElementById('btn-test-telegram');
+
+    if (!token) {
+        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Bot Token first.</div>';
+        return;
+    }
+    if (!chatId) {
+        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Chat ID first.</div>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    resultDiv.innerHTML = '';
+
+    const { ok, data } = await apiPost('telegram-test-message', { token, chat_id: chatId });
+
+    btn.disabled = false;
+    btn.textContent = 'Send Test Message';
+
+    if (ok && data.success) {
+        resultDiv.innerHTML = '<div class="alert alert-success py-2">Test message sent successfully! Check your Telegram chat.</div>';
+    } else {
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || 'Failed to send test message')}</div>`;
+    }
+}
+
+// ─── Inverters ──────────────────────────────────────────────────────────────
+
+async function loadInverters() {
+    const data = await apiGet('inverters');
+    const tbody = document.getElementById('inverter-table-body');
+    const noMsg = document.getElementById('no-inverters-msg');
+
+    tbody.innerHTML = '';
+
+    if (!data.inverters || data.inverters.length === 0) {
+        noMsg.style.display = '';
+        return;
+    }
+
+    noMsg.style.display = 'none';
+
+    data.inverters.forEach(inv => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${escapeHtml(inv.friendly_name)}</td>
+            <td>${escapeHtml(inv.ip_address)}</td>
+            <td>${escapeHtml(inv.username)}</td>
+            <td>${escapeHtml(inv.password)}</td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>Edit</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function openInverterModal(inv = null) {
+    document.getElementById('inverter-edit-id').value = inv ? inv.id : '';
+    document.getElementById('inverter-name').value = inv ? inv.friendly_name : '';
+    document.getElementById('inverter-ip').value = inv ? inv.ip_address : '';
+    document.getElementById('inverter-username').value = inv ? inv.username : 'admin';
+    document.getElementById('inverter-password').value = inv ? inv.password : 'admin';
+    document.getElementById('inverterModalTitle').textContent = inv ? 'Edit Inverter' : 'Add Inverter';
+    inverterModal.show();
+}
+
+function editInverter(inv) {
+    openInverterModal(inv);
+}
+
+async function saveInverter() {
+    clearAlerts();
+
+    const id = document.getElementById('inverter-edit-id').value;
+    const body = {
+        friendly_name: document.getElementById('inverter-name').value,
+        ip_address: document.getElementById('inverter-ip').value,
+        username: document.getElementById('inverter-username').value,
+        password: document.getElementById('inverter-password').value
+    };
+
+    if (!body.friendly_name || !body.ip_address) {
+        showAlert('Name and IP address are required');
+        return;
+    }
+
+    let result;
+    if (id) {
+        result = await apiPut('inverters', id, body);
+    } else {
+        result = await apiPost('inverters', body);
+    }
+
+    if (result.ok) {
+        inverterModal.hide();
+        loadInverters();
+        showAlert('Inverter saved successfully.', 'success');
+    } else {
+        showAlert(result.data.error || 'Failed to save inverter');
+    }
+}
+
+async function deleteInverter(id) {
+    if (!confirm('Are you sure you want to remove this inverter?')) return;
+
+    clearAlerts();
+    const result = await apiDelete('inverters', id);
+
+    if (result.ok) {
+        loadInverters();
+        showAlert('Inverter removed.', 'success');
+    } else {
+        showAlert(result.data.error || 'Failed to remove inverter');
+    }
+}
+
+async function testInverter() {
+    const ip = document.getElementById('inverter-ip').value.trim();
+    const username = document.getElementById('inverter-username').value.trim();
+    const password = document.getElementById('inverter-password').value.trim();
+    const resultDiv = document.getElementById('inverter-test-result');
+
+    if (!ip) {
+        resultDiv.innerHTML = '<div class="alert alert-warning alert-sm py-2 mt-2">Please enter an IP address first.</div>';
+        return;
+    }
+
+    const btn = document.getElementById('btn-test-inverter');
+    btn.disabled = true;
+    btn.textContent = 'Testing...';
+    resultDiv.innerHTML = '';
+
+    try {
+        const resp = await fetch(`../deye.php?ipaddress=${encodeURIComponent(ip)}&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`);
+        const data = await resp.json();
+
+        if (resp.ok && !data.error) {
+            resultDiv.innerHTML = `<div class="alert alert-success py-2 mt-2">Connection successful! Inverter S/N: <strong>${escapeHtml(data.device_sn || 'N/A')}</strong></div>`;
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">Connection failed: ${escapeHtml(data.error || 'Unknown error')}</div>`;
+        }
+    } catch (e) {
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">Connection failed: could not reach the server.</div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Test Connection';
+}
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+</script>
+
+</body>
+</html>
