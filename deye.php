@@ -26,13 +26,13 @@
     // Call the function get_inverter_data passing the values of the variables: ipaddress, username, password
     $data = get_inverter_data($ipaddress, $username, $password);
 
-    // Return the JSON object
-    echo json_encode($data);
-
     // If the data has "error" key, return status 500 Internal Server Error
     if (array_key_exists("error", $data)) {
         http_response_code(500);
     }
+
+    // Return the JSON object
+    echo json_encode($data);
     
 
 

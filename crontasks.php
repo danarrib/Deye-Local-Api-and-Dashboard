@@ -1,7 +1,4 @@
 <?php
-    // Set the start date and time to now
-    $processStartDateTime = new DateTime();
-
     // Set timeout limit to 300 seconds
     set_time_limit(300);
 

@@ -129,8 +129,8 @@
         // Get the latest data for today
         $query = "WITH time_intervals AS (
     SELECT generate_series(
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC'),  -- Start at midnight today
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
+        date_trunc('day', $1::date AT TIME ZONE 'UTC'),  -- Start at midnight today
+        date_trunc('day', $1::date AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
         interval '5 minutes'
     ) AS interval_start
 )
@@ -145,7 +145,7 @@ LEFT JOIN LATERAL (
 ) pvsd ON pvsd.device_sn = idet.device_sn
 ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date));
 
         // Fetch the result as an associative array
         $data = pg_fetch_all($result);
@@ -185,12 +185,12 @@ ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
         // Get the latest data for today
         $query = "WITH time_intervals AS (
     SELECT generate_series(
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC'),  -- Start at midnight today
-        date_trunc('day', '$reference_date' AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
+        date_trunc('day', $1::date AT TIME ZONE 'UTC'),  -- Start at midnight today
+        date_trunc('day', $1::date AT TIME ZONE 'UTC' + interval '1 day'),  -- End at midnight tomorrow
         interval '5 minutes'
     ) AS interval_start
 )
-SELECT 
+SELECT
     ti.interval_start as time,
     SUM(pvsd.power_now) as total_power_now
 FROM time_intervals ti
@@ -203,7 +203,7 @@ LEFT JOIN LATERAL (
 GROUP BY ti.interval_start
 ORDER BY ti.interval_start;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date));
 
         // Fetch the result as an associative array
         $data = pg_fetch_all($result);
@@ -242,19 +242,21 @@ ORDER BY ti.interval_start;";
         // Connect to the Postgres database "deye_data", using username and password
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
+        $tz = pg_escape_string($db, $powerplant_timezone);
+
         // Get the latest data for today
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$powerplant_timezone')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 		order by reference_date, pd.device_sn
 	)
 	select ie.reference_date, SUM(energy) as total_energy from inverter_energy ie group by ie.reference_date order by ie.reference_date
 )
-select max(total_energy) as top_energy from total_energy where reference_date <> '$reference_date';";
+select max(total_energy) as top_energy from total_energy where reference_date <> $1::date;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date));
 
         // Get the first row of the result, and the value of the top_energy column
         $data = pg_fetch_assoc($result);
@@ -275,19 +277,21 @@ select max(total_energy) as top_energy from total_energy where reference_date <>
         // Connect to the Postgres database "deye_data", using username and password
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
+        $tz = pg_escape_string($db, $powerplant_timezone);
+
         // Get the latest data for today
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$powerplant_timezone')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 	)
-	select to_char(ie.reference_date, 'YYYY-MM') as year_month, SUM(energy) as total_energy from inverter_energy ie 
+	select to_char(ie.reference_date, 'YYYY-MM') as year_month, SUM(energy) as total_energy from inverter_energy ie
 	group by year_month order by year_month
 )
-select max(total_energy) as top_energy from total_energy where year_month <> '$reference_date';";
+select max(total_energy) as top_energy from total_energy where year_month <> $1;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date));
 
         // Get the first row of the result, and the value of the top_energy column
         $data = pg_fetch_assoc($result);
@@ -307,20 +311,22 @@ select max(total_energy) as top_energy from total_energy where year_month <> '$r
         // Connect to the Postgres database "deye_data", using username and password
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
+        $tz = pg_escape_string($db, $powerplant_timezone);
+
         // Get the latest data for today
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$powerplant_timezone')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
-		where ((pd.created_at at time zone 'UTC') at time zone '$powerplant_timezone') between '$reference_date-01' and '$next_month_date-01'
+		where ((pd.created_at at time zone 'UTC') at time zone '$tz') between $1::date and $2::date
 		group by reference_date, pd.device_sn
 	)
-	select to_char(ie.reference_date, 'YYYY-MM') as year_month, SUM(energy) as total_energy from inverter_energy ie 
+	select to_char(ie.reference_date, 'YYYY-MM') as year_month, SUM(energy) as total_energy from inverter_energy ie
 	group by year_month order by year_month
 )
 select max(total_energy) as total_energy from total_energy;";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date . '-01', $next_month_date . '-01'));
 
         // Get the first row of the result, and the value of the top_energy column
         $data = pg_fetch_assoc($result);
@@ -342,13 +348,13 @@ select max(total_energy) as total_energy from total_energy;";
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
         $query = "with pvdata as (
-select		p.device_sn, 
-			p.created_at, 
+select		p.device_sn,
+			p.created_at,
 			p.power_now,
 			p.power_today as energy_today,
 			p.power_total as energy_total
-from 		pvstatsdetail p 
-where 		p.created_at between '$reference_date 00:00:00' and '$reference_date 23:59:59'
+from 		pvstatsdetail p
+where 		p.created_at between ($1::date)::timestamptz and ($1::date + interval '1 day' - interval '1 second')::timestamptz
 order by	device_sn, created_at
 ), 
 pvgapbegin as (
@@ -401,9 +407,14 @@ from 		pvalldata pvad
 cross join lateral generate_series(1, pvad.qty_fillers) gs
 )
 insert into pvstatsdetail (device_sn, power_now, power_today, power_total, created_at)
-select pdr.device_sn, pdr.power_now, pdr.energy_today, pdr.energy_total, pdr.created_at from pvdataready pdr";
+select pdr.device_sn, pdr.power_now, pdr.energy_today, pdr.energy_total, pdr.created_at from pvdataready pdr
+where not exists (
+    select 1 from pvstatsdetail p
+    where p.device_sn = pdr.device_sn
+    and p.created_at = pdr.created_at
+)";
 
-        $result = pg_query($db, $query);
+        $result = pg_query_params($db, $query, array($reference_date));
 
         $cmdtuples = pg_affected_rows($result);
 
@@ -420,8 +431,10 @@ select pdr.device_sn, pdr.power_now, pdr.energy_today, pdr.energy_total, pdr.cre
         // Connect to the Postgres database "deye_data", using username and password
         $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
 
+        $tz = pg_escape_string($db, $powerplant_timezone);
+
         // Get distinct dates from pvstatsdetail table
-        $query = "SELECT DISTINCT ((created_at at time zone 'UTC') at time zone '$powerplant_timezone')::date as reference_date FROM pvstatsdetail ORDER BY reference_date;";
+        $query = "SELECT DISTINCT ((created_at at time zone 'UTC') at time zone '$tz')::date as reference_date FROM pvstatsdetail ORDER BY reference_date;";
         $result = pg_query($db, $query);
 
         // Fetch all distinct dates

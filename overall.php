@@ -62,8 +62,8 @@
     $sunset = get_sunset($reference_date);
 
     // Get the Sunrise date and time in UTC format
-    $sunrise_utc = $sunrise->setTimezone(new DateTimeZone('UTC'));
-    $sunset_utc = $sunset->setTimezone(new DateTimeZone('UTC'));
+    $sunrise_utc = (clone $sunrise)->setTimezone(new DateTimeZone('UTC'));
+    $sunset_utc = (clone $sunset)->setTimezone(new DateTimeZone('UTC'));
 
     // Get Detailed data to build the chart
     $detailed_inverter_data = get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date);

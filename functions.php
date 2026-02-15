@@ -202,7 +202,7 @@
             $top_daily_energy = getDailyTopEnergy($processStartDateTime);
 
             // If top_daily_energy is greater than total_power_today, add a message to the telegram message
-            if ($top_daily_energy > 0 && $total_power_today >= $top_daily_energy || $force === true) {
+            if (($top_daily_energy > 0 && $total_power_today >= $top_daily_energy) || $force === true) {
                 $messageText .= "\n🏆 New daily record! Previous record was " . number_format($top_daily_energy, 1) . " kWh";
             }
 
