@@ -126,3 +126,6 @@ Here's a list of new features I wish to add to this project in the future:
 - [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
 - [x] Make it work as a Docker compose package, to make set up easier for everyone
 - [x] Support Dark mode
+- [ ] Allow user to view past dates data on the dashboard
+- [ ] Reports
+  - [ ] Production by time of the day

@@ -8,6 +8,11 @@ require_once __DIR__ . '/auth.php';
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Load functions.php at global scope for actions that need it
+if ($action === 'fix-incomplete-data') {
+    require_once __DIR__ . '/../functions.php';
+}
+
 switch ($action) {
     case 'status':
         handle_status();
@@ -39,6 +44,9 @@ switch ($action) {
         break;
     case 'telegram-test-message':
         handle_telegram_test_message();
+        break;
+    case 'fix-incomplete-data':
+        handle_fix_incomplete_data();
         break;
     default:
         http_response_code(404);
@@ -500,4 +508,36 @@ function handle_telegram_test_message() {
     }
 
     echo json_encode(['success' => true]);
+}
+
+function handle_fix_incomplete_data() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed']);
+        return;
+    }
+
+    require_auth();
+
+    // Switch to plain text streaming output
+    header('Content-Type: text/plain; charset=utf-8');
+    header('X-Accel-Buffering: no');
+
+    // Disable output buffering for streaming
+    while (ob_get_level()) ob_end_flush();
+
+    // Capture output from the function which uses echo/<p> tags
+    ob_start(function($buffer) {
+        // Strip HTML tags and stream as plain text
+        $clean = strip_tags($buffer);
+        if (trim($clean) !== '') {
+            echo $clean;
+            flush();
+        }
+        return '';
+    }, 1);
+
+    reprocess_fix_incomplete_data();
+
+    ob_end_flush();
 }

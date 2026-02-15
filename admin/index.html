@@ -97,6 +97,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-inverters" data-bs-toggle="tab" data-bs-target="#pane-inverters" type="button" role="tab">Inverters</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-tools" data-bs-toggle="tab" data-bs-target="#pane-tools" type="button" role="tab">Tools</button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -171,6 +174,20 @@
                     </table>
                 </div>
                 <p id="no-inverters-msg" class="text-muted" style="display:none;">No inverters configured yet.</p>
+            </div>
+
+            <!-- Tools Tab -->
+            <div class="tab-pane fade" id="pane-tools" role="tabpanel">
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Fix Incomplete Data</h5>
+                        <p class="card-text text-muted">Scans all historical data and interpolates missing 5-minute data points for every date on record. This can take a while depending on how much data you have.</p>
+                        <button type="button" class="btn btn-warning" id="btn-fix-data" onclick="runFixIncompleteData()">Run Fix Incomplete Data</button>
+                        <div id="fix-data-result" class="mt-3" style="display:none;">
+                            <pre id="fix-data-log" class="bg-dark text-light p-3 rounded" style="max-height:400px; overflow-y:auto; font-size:0.85rem;"></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -756,6 +773,48 @@ async function testInverter() {
 
     btn.disabled = false;
     btn.textContent = 'Test Connection';
+}
+
+// ─── Tools ──────────────────────────────────────────────────────────────────
+
+async function runFixIncompleteData() {
+    const btn = document.getElementById('btn-fix-data');
+    const resultDiv = document.getElementById('fix-data-result');
+    const logPre = document.getElementById('fix-data-log');
+
+    if (!confirm('This will scan all historical data and fill in missing data points. This may take several minutes. Continue?')) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    resultDiv.style.display = '';
+    logPre.textContent = 'Starting...\n';
+
+    try {
+        const headers = { 'Authorization': 'Bearer ' + getToken() };
+        const resp = await fetch(`${API_BASE}?action=fix-incomplete-data`, { method: 'POST', headers });
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const text = decoder.decode(value, { stream: true });
+            logPre.textContent += text;
+            logPre.scrollTop = logPre.scrollHeight;
+        }
+
+        if (!resp.ok) {
+            logPre.textContent += '\nError: process failed.';
+        } else {
+            logPre.textContent += '\nDone.';
+        }
+    } catch (e) {
+        logPre.textContent += '\nError: could not reach the server.';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run Fix Incomplete Data';
 }
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
