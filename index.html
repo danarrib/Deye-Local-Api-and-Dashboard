@@ -101,8 +101,8 @@
         <div class="col-auto">
           <button id="btn-prev-day" class="btn btn-outline-secondary btn-sm">&lsaquo; Prev</button>
         </div>
-        <div class="col-auto text-center">
-          <span id="nav-date" class="fw-bold fs-5"></span>
+        <div class="col-auto">
+          <input type="date" id="nav-date" class="form-control form-control-sm" style="width: auto">
         </div>
         <div class="col-auto">
           <button id="btn-next-day" class="btn btn-outline-secondary btn-sm" disabled>Next &rsaquo;</button>
@@ -194,11 +194,7 @@
 
             // Update date navigation
             lastReferenceDate = data.reference_date.replace(/\s/g, '').split('T')[0];
-            let displayDate = new Date(lastReferenceDate + 'T12:00:00');
-            let displayStr = displayDate.toLocaleDateString(navigator.language, {
-              weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
-            });
-            document.getElementById('nav-date').textContent = displayStr;
+            document.getElementById('nav-date').value = lastReferenceDate;
             document.getElementById('btn-next-day').disabled = !data.is_historical;
             document.getElementById('live-badge-wrapper').style.display = data.is_historical ? '' : 'none';
 
@@ -207,6 +203,23 @@
             updateInvertersCharts(data.detailed_inverter_data, data.latest_inverter_data);
           });
       }
+
+      // Set max to today's local date so the picker blocks future dates
+      (function() {
+        let now = new Date();
+        let todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        document.getElementById('nav-date').max = todayStr;
+      })();
+
+      document.getElementById('nav-date').addEventListener('change', function() {
+        let picked = this.value; // YYYY-MM-DD
+        if (!picked) return;
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        let pickedDate = new Date(picked + 'T12:00:00');
+        selectedDate = pickedDate >= today ? null : picked;
+        getApiData();
+      });
 
       document.getElementById('btn-prev-day').addEventListener('click', function() {
         let base = new Date((lastReferenceDate || new Date().toISOString().split('T')[0]) + 'T12:00:00');
