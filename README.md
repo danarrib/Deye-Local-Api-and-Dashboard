@@ -126,6 +126,9 @@ Here's a list of new features I wish to add to this project in the future:
 - [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
 - [x] Make it work as a Docker compose package, to make set up easier for everyone
 - [x] Support Dark mode
-- [ ] Allow user to view past dates data on the dashboard
-- [ ] Reports
-  - [ ] Production by time of the day
+- [x] Allow user to navigate to previous dates on the dashboard (currently only shows current day)
+- [ ] Report builder
+  - [ ] Filter by arbitrary date ranges
+  - [ ] Group/aggregate by time of day, day, week, month
+  - [ ] Cross-reference production data with weather data
+  - [ ] Summary statistics (totals, averages, peaks)

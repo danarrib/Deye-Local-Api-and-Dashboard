@@ -97,6 +97,21 @@
         <p></p>
       </div>
 
+      <div class="row my-3 align-items-center justify-content-center">
+        <div class="col-auto">
+          <button id="btn-prev-day" class="btn btn-outline-secondary btn-sm">&lsaquo; Prev</button>
+        </div>
+        <div class="col-auto text-center">
+          <span id="nav-date" class="fw-bold fs-5"></span>
+        </div>
+        <div class="col-auto">
+          <button id="btn-next-day" class="btn btn-outline-secondary btn-sm" disabled>Next &rsaquo;</button>
+        </div>
+        <div class="col-auto" id="live-badge-wrapper" style="display:none">
+          <button id="btn-live" class="btn btn-success btn-sm">&#9679; Live</button>
+        </div>
+      </div>
+
       <div class="container">
         <div class="row">
           <h2>Total Power</h2>
@@ -125,8 +140,11 @@
       let colorsrgb = ['rgb(255, 99, 132)', 'rgb(54, 162, 235)', 'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)', 'rgb(255, 205, 86)', 'rgb(201, 203, 207)', 'rgb(75, 192, 192)', 'rgb(54, 162, 235)'];
       let colorsrgb2 = [[255, 99, 132], [54, 162, 235], [75, 192, 192], [153, 102, 255], [255, 159, 64], [255, 205, 86], [201, 203, 207], [75, 192, 192], [54, 162, 235]];
 
+      let selectedDate = null; // null = live/today; 'YYYY-MM-DD' = historical
+      let lastReferenceDate = null; // date string of the last loaded reference_date
+
       function getApiData() {
-        let url = 'overall.php';
+        let url = selectedDate ? `overall.php?date=${selectedDate}` : 'overall.php';
 
         fetch(url)
           .then(response => response.json())
@@ -149,29 +167,72 @@
             let page_title = `${data.powerplant_name}, ${strDateTime}`;
             let powerplant_info = page_title.replaceAll(', ', '<br />');
 
-            // Format power_now to have the thousands separator
-            let total_power_now = data.total_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-
             // Update weather info
-            let weatherInfo = `${data.latest_weather_data.condition}, ${data.latest_weather_data.temperature}°C`;
-            // Capitalize first letter
-            weatherInfo = weatherInfo.charAt(0).toUpperCase() + weatherInfo.slice(1);
-
-            document.getElementById('weather').innerHTML = weatherInfo;
-            document.getElementById('weather-image').src = `img/weather_${data.latest_weather_data.icon}.jpg`;
+            if (data.latest_weather_data) {
+              let weatherInfo = `${data.latest_weather_data.condition}, ${data.latest_weather_data.temperature}°C`;
+              weatherInfo = weatherInfo.charAt(0).toUpperCase() + weatherInfo.slice(1);
+              document.getElementById('weather').innerHTML = weatherInfo;
+              document.getElementById('weather-image').src = `img/weather_${data.latest_weather_data.icon}.jpg`;
+            } else {
+              document.getElementById('weather').innerHTML = 'No data';
+            }
 
             document.getElementById('powerplant_name').innerHTML = powerplant_info;
             document.getElementById('page_title').innerHTML = page_title;
-            document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
-            document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today.toLocaleString()} kWh`;
             document.getElementById('sunrise').innerHTML = `Sunrise<br />${sunrise}`;
             document.getElementById('sunset').innerHTML = `Sunset<br />${sunset}`;
+
+            if (data.is_historical) {
+              let peak_power = data.peak_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+              document.getElementById('power_now').innerHTML = `Peak power<br />${peak_power} W`;
+              document.getElementById('power_today').innerHTML = `Energy produced<br />${data.total_power_today.toLocaleString()} kWh`;
+            } else {
+              let total_power_now = data.total_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+              document.getElementById('power_now').innerHTML = `Power now<br />${total_power_now} W`;
+              document.getElementById('power_today').innerHTML = `Energy today<br />${data.total_power_today.toLocaleString()} kWh`;
+            }
+
+            // Update date navigation
+            lastReferenceDate = data.reference_date.replace(/\s/g, '').split('T')[0];
+            let displayDate = new Date(lastReferenceDate + 'T12:00:00');
+            let displayStr = displayDate.toLocaleDateString(navigator.language, {
+              weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+            });
+            document.getElementById('nav-date').textContent = displayStr;
+            document.getElementById('btn-next-day').disabled = !data.is_historical;
+            document.getElementById('live-badge-wrapper').style.display = data.is_historical ? '' : 'none';
 
             updateChart(data.detailed_powerplant_data);
             colorIndex = 0;
             updateInvertersCharts(data.detailed_inverter_data, data.latest_inverter_data);
           });
       }
+
+      document.getElementById('btn-prev-day').addEventListener('click', function() {
+        let base = new Date((lastReferenceDate || new Date().toISOString().split('T')[0]) + 'T12:00:00');
+        base.setDate(base.getDate() - 1);
+        selectedDate = base.toISOString().split('T')[0];
+        getApiData();
+      });
+
+      document.getElementById('btn-next-day').addEventListener('click', function() {
+        if (!selectedDate) return;
+        let base = new Date(selectedDate + 'T12:00:00');
+        base.setDate(base.getDate() + 1);
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (base >= today) {
+          selectedDate = null;
+        } else {
+          selectedDate = base.toISOString().split('T')[0];
+        }
+        getApiData();
+      });
+
+      document.getElementById('btn-live').addEventListener('click', function() {
+        selectedDate = null;
+        getApiData();
+      });
 
       function updateInvertersCharts(data, latestData) {
         // data has the following structure: [{"time": "2025-03-11T09:15:00Z", "device_sn": "3896126058", "power_now": "0"}]
@@ -331,7 +392,9 @@
       getApiData();
 
       var intervalId = window.setInterval(function(){
-        getApiData();
+        if (selectedDate === null) {
+          getApiData();
+        }
       }, 60000);
       
 
