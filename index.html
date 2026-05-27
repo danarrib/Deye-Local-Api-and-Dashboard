@@ -198,7 +198,7 @@
             document.getElementById('btn-next-day').disabled = !data.is_historical;
             document.getElementById('live-badge-wrapper').style.display = data.is_historical ? '' : 'none';
 
-            updateChart(data.detailed_powerplant_data);
+            updateChart(data.detailed_powerplant_data, data.weather_changes);
             colorIndex = 0;
             updateInvertersCharts(data.detailed_inverter_data, data.latest_inverter_data);
           });
@@ -327,18 +327,76 @@
       });
       }
 
-      function updateChart(data) {
+      function conditionToEmoji(condition) {
+        if (!condition) return '🌡️';
+        const c = condition.toLowerCase();
+        if (c === 'clear sky' || c === 'mainly clear') return '☀️';
+        if (c === 'partly cloudy') return '🌤️';
+        if (c === 'overcast') return '☁️';
+        if (c.includes('fog')) return '🌫️';
+        if (c.includes('thunder') || c.includes('storm')) return '⛈️';
+        if (c.includes('snow')) return '❄️';
+        if (c.includes('drizzle') || c.includes('rain') || c.includes('shower')) return '🌧️';
+        return '🌡️';
+      }
+
+      const weatherAnnotationsPlugin = {
+        id: 'weatherAnnotations',
+        afterDraw(chart, args, options) {
+          const changes = options.changes;
+          const rawTimes = options.rawTimes;
+          if (!changes || !changes.length || !rawTimes || !rawTimes.length) return;
+
+          const ctx = chart.ctx;
+          const xScale = chart.scales.x;
+          const chartArea = chart.chartArea;
+
+          changes.forEach(change => {
+            const changeMs = new Date(change.time).getTime();
+
+            // Find the index of the closest data point in the chart
+            let closestIdx = 0, minDiff = Infinity;
+            rawTimes.forEach((t, i) => {
+              const diff = Math.abs(new Date(t).getTime() - changeMs);
+              if (diff < minDiff) { minDiff = diff; closestIdx = i; }
+            });
+
+            const x = xScale.getPixelForValue(closestIdx);
+            const emoji = conditionToEmoji(change.condition);
+
+            ctx.save();
+
+            // Dashed vertical line
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, chartArea.top);
+            ctx.lineTo(x, chartArea.bottom);
+            ctx.stroke();
+
+            // Emoji label
+            ctx.setLineDash([]);
+            ctx.font = '18px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillText(emoji, x, chartArea.top + 4);
+
+            ctx.restore();
+          });
+        }
+      };
+
+      function updateChart(data, weatherChanges) {
         let ctx = document.getElementById('myChart');
         let chartStatus = Chart.getChart('myChart'); // <canvas> id
         if (chartStatus != undefined) {
           chartStatus.destroy();
         }
 
-        let labels = data.map(d => d.time);
-        // Convert the times from UTC to local
-        labels = labels.map(l => {
-          let date = new Date(l);
-          return date.toLocaleTimeString(navigator.language, {
+        let rawTimes = data.map(d => d.time);
+        let labels = rawTimes.map(t => {
+          return new Date(t).toLocaleTimeString(navigator.language, {
             hour: '2-digit',
             minute: '2-digit'
           });
@@ -347,25 +405,32 @@
         let values = data.map(d => d.total_power_now);
 
         new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Total Power',
-            fill: true,
-            data: values,
-            borderWidth: 1,
-            tension: 0.5
-          }]
-        },
-        options: {
-          scales: {
-            y: {
-              beginAtZero: true
+          type: 'line',
+          plugins: [weatherAnnotationsPlugin],
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Total Power',
+              fill: true,
+              data: values,
+              borderWidth: 1,
+              tension: 0.5
+            }]
+          },
+          options: {
+            plugins: {
+              weatherAnnotations: {
+                changes: weatherChanges || [],
+                rawTimes: rawTimes
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true
+              }
             }
           }
-        }
-      });
+        });
       }
 
       function formatDateTime(dateTime) {

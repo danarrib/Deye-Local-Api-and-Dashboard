@@ -142,6 +142,34 @@
         return pg_fetch_all($result) ?: [];
     }
 
+    function get_weather_changes_for_date($sunrise, $sunset) {
+        global $db;
+
+        $sunrise_utc = (clone $sunrise)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:sO');
+        $sunset_utc = (clone $sunset)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:sO');
+
+        $query = "SELECT created_at, condition
+                  FROM (
+                      SELECT created_at, condition,
+                             LAG(condition) OVER (ORDER BY created_at) AS prev_condition
+                      FROM weather_info
+                      WHERE created_at BETWEEN $1 AND $2
+                  ) sub
+                  WHERE condition <> prev_condition OR prev_condition IS NULL
+                  ORDER BY created_at";
+
+        $result = pg_query_params($db, $query, [$sunrise_utc, $sunset_utc]);
+        $data = pg_fetch_all($result) ?: [];
+
+        foreach ($data as &$row) {
+            $dt = new DateTime($row['created_at'], new DateTimeZone('UTC'));
+            $row['time'] = $dt->format('Y-m-d\TH:i:s\Z');
+            unset($row['created_at']);
+        }
+
+        return $data;
+    }
+
     function get_weather_for_date($sunrise, $sunset) {
         global $db;
 

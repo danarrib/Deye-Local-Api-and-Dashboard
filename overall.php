@@ -82,6 +82,8 @@
     $detailed_inverter_data = get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date);
     $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
 
+    $weather_changes = get_weather_changes_for_date($sunrise, $sunset);
+
     if ($is_historical) {
         foreach ($detailed_powerplant_data as $row) {
             if ($row['total_power_now'] !== null && floatval($row['total_power_now']) > $peak_power_now) {
@@ -113,6 +115,7 @@
         "detailed_inverter_data" => $detailed_inverter_data,
         "detailed_powerplant_data" => $detailed_powerplant_data,
         "latest_weather_data" => $latest_weather_data,
+        "weather_changes" => $weather_changes,
     );
 
     echo json_encode($json);
