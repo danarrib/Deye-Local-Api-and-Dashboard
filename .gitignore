@@ -3,3 +3,5 @@ CLAUDE.md
 tasks/
 config.php
 scripts/node_modules/
+rebuild.sh
+phpinfo.php

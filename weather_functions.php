@@ -122,16 +122,12 @@
     }
 
     function saveWeatherDataToDB($weatherData) {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
+        global $db;
 
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Insert the data into the table "weather_info"
-        $query = "INSERT INTO weather_info (temperature, condition, is_clear, is_cloudy, is_rainy, is_snowy, is_stormy, is_foggy, created_at) 
+        $query = "INSERT INTO weather_info (temperature, condition, is_clear, is_cloudy, is_rainy, is_snowy, is_stormy, is_foggy, created_at)
                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
 
-        $result = pg_query_params($db, $query, array(
+        pg_query_params($db, $query, array(
             $weatherData->temperature,
             $weatherData->condition,
             $weatherData->is_clear ? "true" : "false",
@@ -142,36 +138,36 @@
             $weatherData->is_foggy ? "true" : "false",
             $weatherData->created_at
         ));
-
-        pg_close($db);
     }
 
     function saveWeatherData(){
         try {
             $weatherData = getWeatherDataFromAPI();
             saveWeatherDataToDB($weatherData);
+            app_log('info', 'Weather data saved', [
+                'event'       => 'weather_update',
+                'condition'   => $weatherData->condition,
+                'temperature' => $weatherData->temperature,
+            ]);
         } catch (Exception $e) {
-            error_log("Error saving weather data: " . $e->getMessage());
+            app_log('error', 'Failed to save weather data', [
+                'event' => 'weather_error',
+                'error' => $e->getMessage(),
+            ]);
         }
         echo "Weather data saved successfully.\n";
     }
 
     function fetchLatestWeatherData() {
-        global $db_host, $db_port, $db_name, $db_user, $db_pass;
+        global $db;
 
-        // Connect to the Postgres database "deye_data", using username and password
-        $db = pg_connect("host=$db_host port=$db_port dbname=$db_name user=$db_user password=$db_pass");
-
-        // Fetch the latest weather data
-        $query = "SELECT temperature, condition, is_clear, is_cloudy, is_rainy, is_snowy, is_stormy, is_foggy, created_at 
-                  FROM weather_info 
-                  ORDER BY created_at DESC 
+        $query = "SELECT temperature, condition, is_clear, is_cloudy, is_rainy, is_snowy, is_stormy, is_foggy, created_at
+                  FROM weather_info
+                  ORDER BY created_at DESC
                   LIMIT 1";
 
         $result = pg_query($db, $query);
         $row = pg_fetch_assoc($result);
-
-        pg_close($db);
 
         if ($row) {
             $weatherData = new stdClass();

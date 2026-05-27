@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y cron curl iputils-ping
 RUN touch /var/log/cron.log
 
 # Setup cron job
-RUN (crontab -l ; echo "*/5 * * * * curl -I http://deye_php/crontasks.php >> /var/log/cron.log") | crontab
+RUN (crontab -l ; echo "*/5 * * * * curl -s http://deye_php/crontasks.php >> /var/log/cron.log") | crontab
 
 # Run the command on container startup
 CMD cron && tail -f /var/log/cron.log

@@ -48,6 +48,12 @@ switch ($action) {
     case 'fix-incomplete-data':
         handle_fix_incomplete_data();
         break;
+    case 'logs':
+        handle_get_logs();
+        break;
+    case 'log-keys':
+        handle_get_log_keys();
+        break;
     default:
         http_response_code(404);
         echo json_encode(['error' => 'Unknown action']);
@@ -100,13 +106,8 @@ function handle_setup_db() {
     write_config_file($config);
 
     // Run database setup
-    $GLOBALS['db_host'] = $host;
-    $GLOBALS['db_port'] = $port;
-    $GLOBALS['db_name'] = $dbname;
-    $GLOBALS['db_user'] = $user;
-    $GLOBALS['db_pass'] = $password;
-
     require_once __DIR__ . '/../db_functions.php';
+    $GLOBALS['db'] = get_db_connection();
     setup_db();
 
     echo json_encode(['success' => true]);
@@ -158,8 +159,6 @@ function handle_setup_admin() {
         [$username, $hash, $now]
     );
 
-    pg_close($db);
-
     if (!$result) {
         http_response_code(500);
         echo json_encode(['error' => 'Failed to create admin account']);
@@ -195,7 +194,6 @@ function handle_login() {
 
     $result = pg_query_params($db, "SELECT id, username, password_hash FROM users WHERE username = $1", [$username]);
     $user = pg_fetch_assoc($result);
-    pg_close($db);
 
     if (!$user || !password_verify($password, $user['password_hash'])) {
         http_response_code(401);
@@ -223,7 +221,6 @@ function handle_get_settings() {
 
     $result = pg_query($db, "SELECT * FROM powerplant LIMIT 1");
     $row = pg_fetch_assoc($result);
-    pg_close($db);
 
     echo json_encode($row ?: (object)[]);
 }
@@ -274,7 +271,6 @@ function handle_save_settings() {
         );
     }
 
-    pg_close($db);
     echo json_encode(['success' => true]);
 }
 
@@ -290,7 +286,6 @@ function handle_get_inverters() {
 
     $result = pg_query($db, "SELECT id, device_sn, friendly_name, ip_address, username, password, \"order\" FROM inverters ORDER BY \"order\", id");
     $rows = pg_fetch_all($result);
-    pg_close($db);
 
     echo json_encode(['inverters' => $rows ?: []]);
 }
@@ -331,7 +326,6 @@ function handle_add_inverter() {
     );
 
     $new_row = pg_fetch_assoc($result);
-    pg_close($db);
 
     echo json_encode(['success' => true, 'id' => (int)$new_row['id']]);
 }
@@ -370,7 +364,6 @@ function handle_update_inverter() {
         [$friendly_name, $ip_address, $username, $password, (int)$id]
     );
 
-    pg_close($db);
     echo json_encode(['success' => true]);
 }
 
@@ -392,7 +385,6 @@ function handle_delete_inverter() {
     }
 
     pg_query_params($db, "DELETE FROM inverters WHERE id = $1", [(int)$id]);
-    pg_close($db);
 
     echo json_encode(['success' => true]);
 }
@@ -540,4 +532,99 @@ function handle_fix_incomplete_data() {
     reprocess_fix_incomplete_data();
 
     ob_end_flush();
+}
+
+function handle_get_logs() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed']);
+        return;
+    }
+
+    require_auth();
+
+    $db = get_db_connection();
+    if (!$db) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database connection failed']);
+        return;
+    }
+
+    $conditions = [];
+    $params = [];
+    $i = 1;
+
+    // Date range: either hours-ago shortcut or explicit from/to
+    $hours = isset($_GET['hours']) ? intval($_GET['hours']) : null;
+    $from  = $_GET['from'] ?? null;
+    $to    = $_GET['to']   ?? null;
+
+    if ($hours && $hours > 0) {
+        $conditions[] = "created_at >= NOW() - INTERVAL '$hours hours'";
+    } else {
+        if ($from) { $conditions[] = "created_at >= $" . $i++; $params[] = $from; }
+        if ($to)   { $conditions[] = "created_at <= $" . $i++; $params[] = $to;   }
+    }
+
+    // Level filter
+    if (!empty($_GET['level'])) {
+        $conditions[] = "level = $" . $i++;
+        $params[] = $_GET['level'];
+    }
+
+    // Full-text search on message
+    if (!empty($_GET['search'])) {
+        $conditions[] = "message ILIKE $" . $i++;
+        $params[] = '%' . $_GET['search'] . '%';
+    }
+
+    // Context key-value filters (multiple, JSON-encoded array of {key, value})
+    $ctx_filters = json_decode($_GET['ctx_filters'] ?? '[]', true) ?: [];
+    foreach ($ctx_filters as $filter) {
+        $key = $filter['key'] ?? '';
+        $val = $filter['value'] ?? '';
+        if (!$key) continue;
+        if ($val !== '') {
+            $conditions[] = "context->>" . "$" . $i++ . " ILIKE $" . $i++;
+            $params[] = $key;
+            $params[] = '%' . $val . '%';
+        } else {
+            $conditions[] = "context ? $" . $i++;
+            $params[] = $key;
+        }
+    }
+
+    $where = $conditions ? 'WHERE ' . implode(' AND ', $conditions) : '';
+    $limit = min(intval($_GET['limit'] ?? 500), 2000);
+
+    $sql = "SELECT id, created_at, level, message, context FROM logs $where ORDER BY created_at DESC LIMIT $limit";
+    $result = pg_query_params($db, $sql, $params);
+
+    if (!$result) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Query failed: ' . pg_last_error($db)]);
+        return;
+    }
+
+    echo json_encode(['logs' => pg_fetch_all($result) ?: []]);
+}
+
+function handle_get_log_keys() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Method not allowed']);
+        return;
+    }
+
+    require_auth();
+
+    $db = get_db_connection();
+    if (!$db) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database connection failed']);
+        return;
+    }
+
+    $result = pg_query($db, "SELECT DISTINCT jsonb_object_keys(context) AS key FROM logs WHERE context IS NOT NULL ORDER BY key");
+    echo json_encode(['keys' => array_column(pg_fetch_all($result) ?: [], 'key')]);
 }

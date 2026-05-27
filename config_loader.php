@@ -28,7 +28,7 @@ function load_db_config() {
 
         // Test connection and auto-write config.php on success
         $conn_string = "host={$config['host']} port={$config['port']} dbname={$config['dbname']} user={$config['user']} password={$config['password']}";
-        $conn = @pg_connect($conn_string);
+        $conn = @pg_connect($conn_string, PGSQL_CONNECT_FORCE_NEW);
         if ($conn) {
             pg_close($conn);
             write_config_file($config);
@@ -47,30 +47,28 @@ function write_config_file(array $config) {
 }
 
 function get_db_connection() {
+    static $conn = null;
+
+    if ($conn !== null && pg_connection_status($conn) === PGSQL_CONNECTION_OK) {
+        return $conn;
+    }
+
     $config = load_db_config();
     if (!$config) return false;
 
     $conn_string = "host={$config['host']} port={$config['port']} dbname={$config['dbname']} user={$config['user']} password={$config['password']}";
-    return @pg_connect($conn_string);
+    $conn = @pg_connect($conn_string, PGSQL_CONNECT_FORCE_NEW);
+    return $conn ?: false;
 }
 
 function get_system_status() {
-    $config = load_db_config();
-    if (!$config) return 'needs-db-config';
-
     $db = get_db_connection();
     if (!$db) return 'needs-db-config';
 
-    // Check if users table exists and has rows
     $result = @pg_query($db, "SELECT COUNT(*) AS cnt FROM users");
-    if (!$result) {
-        pg_close($db);
-        return 'needs-admin';
-    }
+    if (!$result) return 'needs-admin';
 
     $row = pg_fetch_assoc($result);
-    pg_close($db);
-
     if ((int)$row['cnt'] === 0) return 'needs-admin';
     return 'ready';
 }
@@ -80,13 +78,9 @@ function load_powerplant_settings() {
     if (!$db) return [];
 
     $result = @pg_query($db, "SELECT * FROM powerplant LIMIT 1");
-    if (!$result) {
-        pg_close($db);
-        return [];
-    }
+    if (!$result) return [];
 
     $row = pg_fetch_assoc($result);
-    pg_close($db);
     return $row ?: [];
 }
 
@@ -95,12 +89,8 @@ function load_inverter_list() {
     if (!$db) return [];
 
     $result = @pg_query($db, "SELECT ip_address AS ipaddress, username, password, friendly_name FROM inverters ORDER BY \"order\", id");
-    if (!$result) {
-        pg_close($db);
-        return [];
-    }
+    if (!$result) return [];
 
     $rows = pg_fetch_all($result);
-    pg_close($db);
     return $rows ?: [];
 }

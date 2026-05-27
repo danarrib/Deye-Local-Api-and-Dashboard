@@ -100,6 +100,9 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-tools" data-bs-toggle="tab" data-bs-target="#pane-tools" type="button" role="tab">Tools</button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-logs" data-bs-toggle="tab" data-bs-target="#pane-logs" type="button" role="tab" onclick="initLogsTab()">Logs</button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -189,6 +192,78 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Logs Tab -->
+            <div class="tab-pane fade" id="pane-logs" role="tabpanel">
+
+                <!-- Filters -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <!-- Row 1: time, level, text search -->
+                        <div class="row g-2 align-items-end mb-3">
+                            <div class="col-auto">
+                                <label class="form-label mb-1">Period</label>
+                                <select class="form-select form-select-sm" id="log-hours" onchange="onLogPeriodChange()">
+                                    <option value="1" selected>Last 1 hour</option>
+                                    <option value="6">Last 6 hours</option>
+                                    <option value="24">Last 24 hours</option>
+                                    <option value="168">Last 7 days</option>
+                                    <option value="custom">Custom range</option>
+                                </select>
+                            </div>
+                            <div class="col-auto" id="log-custom-range" style="display:none;">
+                                <label class="form-label mb-1">From</label>
+                                <input type="datetime-local" class="form-control form-control-sm" id="log-from">
+                            </div>
+                            <div class="col-auto" id="log-custom-range-to" style="display:none;">
+                                <label class="form-label mb-1">To</label>
+                                <input type="datetime-local" class="form-control form-control-sm" id="log-to">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label mb-1">Level</label>
+                                <select class="form-select form-select-sm" id="log-level">
+                                    <option value="">All</option>
+                                    <option value="debug">debug</option>
+                                    <option value="info">info</option>
+                                    <option value="warning">warning</option>
+                                    <option value="error">error</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <label class="form-label mb-1">Message search</label>
+                                <input type="text" class="form-control form-control-sm" id="log-search" placeholder="e.g. inverter">
+                            </div>
+                            <div class="col-auto align-self-end">
+                                <button class="btn btn-primary btn-sm" onclick="loadLogs()">Search</button>
+                            </div>
+                        </div>
+                        <!-- Row 2: context filter builder -->
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="small fw-semibold me-2">Context filters</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addContextFilter()">+ Add filter</button>
+                        </div>
+                        <div id="ctx-filters"></div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="log-status" class="text-muted small mb-2"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle" id="log-table" style="display:none;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width:160px;">Timestamp</th>
+                                <th style="width:80px;">Level</th>
+                                <th>Message</th>
+                                <th>Context</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-tbody"></tbody>
+                    </table>
+                </div>
+                <p id="log-empty" class="text-muted" style="display:none;">No log entries found for the selected filters.</p>
+            </div>
+
         </div>
     </div>
 
@@ -559,7 +634,7 @@ function onTelegramTokenChange() {
         actionsDiv.style.display = '';
         btnDetect.style.display = '';
         btnTest.style.display = '';
-        link.href = `https://api.telegram.org/bot${encodeURIComponent(token)}/getUpdates`;
+        if (link) link.href = `https://api.telegram.org/bot${encodeURIComponent(token)}/getUpdates`;
     } else {
         actionsDiv.style.display = 'none';
         btnDetect.style.display = 'none';
@@ -815,6 +890,138 @@ async function runFixIncompleteData() {
 
     btn.disabled = false;
     btn.textContent = 'Run Fix Incomplete Data';
+}
+
+// ─── Logs ────────────────────────────────────────────────────────────────────
+
+const LOG_LEVEL_BADGES = {
+    debug:   'secondary',
+    info:    'primary',
+    warning: 'warning',
+    error:   'danger',
+};
+
+let logContextKeys = [];
+
+async function initLogsTab() {
+    await loadLogContextKeys();
+    loadLogs();
+}
+
+async function loadLogContextKeys() {
+    if (logContextKeys.length > 0) return;
+    try {
+        const resp = await fetch(`${API_BASE}?action=log-keys`, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await resp.json();
+        logContextKeys = data.keys ?? [];
+    } catch (e) {}
+}
+
+function onLogPeriodChange() {
+    const custom = document.getElementById('log-hours').value === 'custom';
+    document.getElementById('log-custom-range').style.display    = custom ? '' : 'none';
+    document.getElementById('log-custom-range-to').style.display = custom ? '' : 'none';
+}
+
+function addContextFilter() {
+    const container = document.getElementById('ctx-filters');
+    const row = document.createElement('div');
+    row.className = 'row g-2 align-items-center mb-2 ctx-filter-row';
+
+    const options = logContextKeys.map(k =>
+        `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`
+    ).join('');
+
+    row.innerHTML = `
+        <div class="col-auto">
+            <select class="form-select form-select-sm ctx-filter-key" style="min-width:170px;">
+                <option value="">— select key —</option>
+                ${options}
+            </select>
+        </div>
+        <div class="col-auto">
+            <input type="text" class="form-control form-control-sm ctx-filter-value" placeholder="value (empty = key exists)">
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.ctx-filter-row').remove()">×</button>
+        </div>`;
+    container.appendChild(row);
+}
+
+async function loadLogs() {
+    const hours  = document.getElementById('log-hours').value;
+    const from   = document.getElementById('log-from').value;
+    const to     = document.getElementById('log-to').value;
+    const level  = document.getElementById('log-level').value;
+    const search = document.getElementById('log-search').value;
+
+    const ctxFilters = [];
+    document.querySelectorAll('.ctx-filter-row').forEach(row => {
+        const key = row.querySelector('.ctx-filter-key').value;
+        const val = row.querySelector('.ctx-filter-value').value;
+        if (key) ctxFilters.push({ key, value: val });
+    });
+
+    const status = document.getElementById('log-status');
+    status.textContent = 'Loading…';
+
+    const params = new URLSearchParams();
+    if (hours !== 'custom') {
+        params.set('hours', hours);
+    } else {
+        if (from) params.set('from', from);
+        if (to)   params.set('to',   to);
+    }
+    if (level)             params.set('level',       level);
+    if (search)            params.set('search',      search);
+    if (ctxFilters.length) params.set('ctx_filters', JSON.stringify(ctxFilters));
+
+    try {
+        const resp = await fetch(`${API_BASE}?action=logs&${params}`, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await resp.json();
+        if (!resp.ok) { status.textContent = 'Error: ' + (data.error ?? resp.status); return; }
+
+        const logs  = data.logs ?? [];
+        const tbody = document.getElementById('log-tbody');
+        tbody.innerHTML = '';
+
+        document.getElementById('log-table').style.display = logs.length ? '' : 'none';
+        document.getElementById('log-empty').style.display = logs.length ? 'none' : '';
+        status.textContent = logs.length ? `${logs.length} entr${logs.length === 1 ? 'y' : 'ies'} found` : '';
+
+        for (const row of logs) {
+            const badge = LOG_LEVEL_BADGES[row.level] ?? 'secondary';
+            const ts    = new Date(row.created_at).toLocaleString();
+            const tr    = document.createElement('tr');
+            if (row.level === 'error')   tr.classList.add('table-danger');
+            if (row.level === 'warning') tr.classList.add('table-warning');
+            tr.innerHTML = `
+                <td class="text-nowrap small">${escapeHtml(ts)}</td>
+                <td><span class="badge bg-${badge}">${escapeHtml(row.level)}</span></td>
+                <td class="small">${escapeHtml(row.message)}</td>
+                <td class="small">${formatContext(row.context)}</td>`;
+            tbody.appendChild(tr);
+        }
+    } catch (e) {
+        status.textContent = 'Error: could not reach the server.';
+    }
+}
+
+function formatContext(jsonStr) {
+    if (!jsonStr) return '';
+    try {
+        const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+        const entries = Object.entries(obj);
+        if (!entries.length) return '';
+        const rows = entries.map(([k, v]) =>
+            `<tr><td class="text-muted pe-2 text-nowrap">${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`
+        ).join('');
+        return `<table class="table table-borderless table-sm mb-0" style="font-size:0.8rem;">${rows}</table>`;
+    } catch { return escapeHtml(String(jsonStr)); }
 }
 
 // ─── Utilities ──────────────────────────────────────────────────────────────

@@ -24,6 +24,9 @@
     include_once 'db_functions.php';
     include_once 'weather_functions.php';
     include_once 'telegram_functions.php';
+    include_once 'log_functions.php';
+
+    $db = get_db_connection();
 
     setup_db();
 
@@ -160,8 +163,21 @@
 
             // if the data has "error" key, just skip it
             if (array_key_exists("error", $data)) {
+                app_log('error', 'Failed to fetch inverter data', [
+                    'event'   => 'inverter_fetch_error',
+                    'inverter' => $inverter['ipaddress'],
+                    'name'    => $inverter['friendly_name'],
+                ]);
                 continue;
             }
+
+            app_log('info', 'Inverter data collected', [
+                'event'       => 'inverter_fetch',
+                'inverter'    => $inverter['ipaddress'],
+                'name'        => $inverter['friendly_name'],
+                'power_now'   => $data['power_now'],
+                'power_today' => $data['power_today'],
+            ]);
 
             $data["friendly_name"] = $inverter['friendly_name'];
             $data["ip_address"] = $inverter['ipaddress'];
@@ -221,6 +237,10 @@
                 }
             }
 
+            app_log('info', 'Daily report sent', [
+                'event'        => 'daily_report',
+                'total_kwh'    => round($total_power_today, 2),
+            ]);
             send_telegram_daily_chart($messageText);
         }
     }
