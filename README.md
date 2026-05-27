@@ -64,7 +64,7 @@ There are two ways to use: The API and the Dashboard:
 ### Dashboard
 Open an Internet Browser and open `http://localhost/deye_api/`
 
-<img alt="image" src="https://github.com/user-attachments/assets/9cb7b545-1a5f-487e-8527-142f44a81e71" />
+<img alt="Dashboard screenshot" src="docs/dashboard.png" />
 
 ### API
 Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
