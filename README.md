@@ -23,6 +23,8 @@ This is what is already working:
 - [x] Provide a standard RESTFul API to get data from Deye Micro-inverters over local network
 - [x] Store data from the micro-inverters to a database, so the data can be used to create useful reports
 - [x] Create a Dashboard to present the powerplant data
+  - [x] Navigate to any previous date using prev/next buttons or a date picker
+  - [x] Weather condition change indicators overlaid on the power chart (emoji + dashed line at each transition)
 - [x] Send a daily report to a Telegram Group (using a Telegram Bot)
 
 
@@ -123,6 +125,7 @@ Here's a list of new features I wish to add to this project in the future:
   - Energy Total (kWh)
 - [ ] Get Inverter Temperature (Celsius)
 - [x] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
+- [x] Show weather condition changes as emoji icons on the power chart
 - [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
 - [x] Make it work as a Docker compose package, to make set up easier for everyone
 - [x] Support Dark mode
