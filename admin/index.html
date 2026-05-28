@@ -13,7 +13,7 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-4" id="main-navbar" style="display:none;">
     <div class="container">
         <a class="navbar-brand" href="#">Deye Admin</a>
-        <button class="btn btn-outline-secondary btn-sm" id="btn-logout" onclick="logout()">Logout</button>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-logout" onclick="logout()" data-i18n="admin_logout">Logout</button>
     </div>
 </nav>
 
@@ -24,67 +24,67 @@
 
     <!-- Section: Database Setup -->
     <div id="section-db-setup" class="section" style="display:none;">
-        <h3 class="mb-3">Database Setup</h3>
-        <p class="text-muted">Configure your PostgreSQL connection to get started.</p>
+        <h3 class="mb-3" data-i18n="admin_db_setup_title">Database Setup</h3>
+        <p class="text-muted" data-i18n="admin_db_setup_desc">Configure your PostgreSQL connection to get started.</p>
         <form id="form-db-setup" onsubmit="return submitDbSetup(event)">
             <div class="mb-3">
-                <label for="db-host" class="form-label">Host</label>
+                <label for="db-host" class="form-label" data-i18n="admin_db_host">Host</label>
                 <input type="text" class="form-control" id="db-host" value="localhost" required>
             </div>
             <div class="mb-3">
-                <label for="db-port" class="form-label">Port</label>
+                <label for="db-port" class="form-label" data-i18n="admin_db_port">Port</label>
                 <input type="number" class="form-control" id="db-port" value="5432" required>
             </div>
             <div class="mb-3">
-                <label for="db-name" class="form-label">Database Name</label>
+                <label for="db-name" class="form-label" data-i18n="admin_db_name">Database Name</label>
                 <input type="text" class="form-control" id="db-name" required>
             </div>
             <div class="mb-3">
-                <label for="db-user" class="form-label">Username</label>
+                <label for="db-user" class="form-label" data-i18n="admin_db_user">Username</label>
                 <input type="text" class="form-control" id="db-user" required>
             </div>
             <div class="mb-3">
-                <label for="db-pass" class="form-label">Password</label>
+                <label for="db-pass" class="form-label" data-i18n="admin_db_pass">Password</label>
                 <input type="password" class="form-control" id="db-pass">
             </div>
-            <button type="submit" class="btn btn-primary" id="btn-db-setup">Test &amp; Save</button>
+            <button type="submit" class="btn btn-primary" id="btn-db-setup" data-i18n="admin_db_save">Test &amp; Save</button>
         </form>
     </div>
 
     <!-- Section: Admin Account Setup -->
     <div id="section-admin-setup" class="section" style="display:none;">
-        <h3 class="mb-3">Create Admin Account</h3>
-        <p class="text-muted">No admin account found. Create one to get started.</p>
+        <h3 class="mb-3" data-i18n="admin_account_setup_title">Create Admin Account</h3>
+        <p class="text-muted" data-i18n="admin_account_setup_desc">No admin account found. Create one to get started.</p>
         <form id="form-admin-setup" onsubmit="return submitAdminSetup(event)">
             <div class="mb-3">
-                <label for="admin-username" class="form-label">Username</label>
+                <label for="admin-username" class="form-label" data-i18n="admin_username">Username</label>
                 <input type="text" class="form-control" id="admin-username" required>
             </div>
             <div class="mb-3">
-                <label for="admin-password" class="form-label">Password</label>
+                <label for="admin-password" class="form-label" data-i18n="admin_password">Password</label>
                 <input type="password" class="form-control" id="admin-password" minlength="6" required>
             </div>
             <div class="mb-3">
-                <label for="admin-password-confirm" class="form-label">Confirm Password</label>
+                <label for="admin-password-confirm" class="form-label" data-i18n="admin_confirm_password">Confirm Password</label>
                 <input type="password" class="form-control" id="admin-password-confirm" minlength="6" required>
             </div>
-            <button type="submit" class="btn btn-primary" id="btn-admin-setup">Create Account</button>
+            <button type="submit" class="btn btn-primary" id="btn-admin-setup" data-i18n="admin_create_account">Create Account</button>
         </form>
     </div>
 
     <!-- Section: Login -->
     <div id="section-login" class="section" style="display:none;">
-        <h3 class="mb-3">Admin Login</h3>
+        <h3 class="mb-3" data-i18n="admin_login_title">Admin Login</h3>
         <form id="form-login" onsubmit="return submitLogin(event)">
             <div class="mb-3">
-                <label for="login-username" class="form-label">Username</label>
+                <label for="login-username" class="form-label" data-i18n="admin_username">Username</label>
                 <input type="text" class="form-control" id="login-username" required>
             </div>
             <div class="mb-3">
-                <label for="login-password" class="form-label">Password</label>
+                <label for="login-password" class="form-label" data-i18n="admin_password">Password</label>
                 <input type="password" class="form-control" id="login-password" required>
             </div>
-            <button type="submit" class="btn btn-primary" id="btn-login">Login</button>
+            <button type="submit" class="btn btn-primary" id="btn-login" data-i18n="admin_login_btn">Login</button>
         </form>
     </div>
 
@@ -92,16 +92,16 @@
     <div id="section-dashboard" class="section" style="display:none;">
         <ul class="nav nav-tabs mb-4" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-settings" data-bs-toggle="tab" data-bs-target="#pane-settings" type="button" role="tab">Power Plant Settings</button>
+                <button class="nav-link active" id="tab-settings" data-bs-toggle="tab" data-bs-target="#pane-settings" type="button" role="tab" data-i18n="admin_tab_settings">Power Plant Settings</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-inverters" data-bs-toggle="tab" data-bs-target="#pane-inverters" type="button" role="tab">Inverters</button>
+                <button class="nav-link" id="tab-inverters" data-bs-toggle="tab" data-bs-target="#pane-inverters" type="button" role="tab" data-i18n="admin_tab_inverters">Inverters</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-tools" data-bs-toggle="tab" data-bs-target="#pane-tools" type="button" role="tab">Tools</button>
+                <button class="nav-link" id="tab-tools" data-bs-toggle="tab" data-bs-target="#pane-tools" type="button" role="tab" data-i18n="admin_tab_tools">Tools</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-logs" data-bs-toggle="tab" data-bs-target="#pane-logs" type="button" role="tab" onclick="initLogsTab()">Logs</button>
+                <button class="nav-link" id="tab-logs" data-bs-toggle="tab" data-bs-target="#pane-logs" type="button" role="tab" onclick="initLogsTab()" data-i18n="admin_tab_logs">Logs</button>
             </li>
         </ul>
 
@@ -110,82 +110,82 @@
             <div class="tab-pane fade show active" id="pane-settings" role="tabpanel">
                 <form id="form-settings" onsubmit="return submitSettings(event)">
                     <div class="mb-3">
-                        <label for="setting-name" class="form-label">Power Plant Name</label>
+                        <label for="setting-name" class="form-label" data-i18n="admin_setting_name">Power Plant Name</label>
                         <input type="text" class="form-control" id="setting-name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="setting-timezone" class="form-label">Timezone</label>
+                        <label for="setting-timezone" class="form-label" data-i18n="admin_setting_timezone">Timezone</label>
                         <select class="form-select" id="setting-timezone" required></select>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <label for="setting-latitude" class="form-label">Latitude</label>
+                            <label for="setting-latitude" class="form-label" data-i18n="admin_setting_latitude">Latitude</label>
                             <input type="number" step="any" class="form-control" id="setting-latitude" required>
                         </div>
                         <div class="col">
-                            <label for="setting-longitude" class="form-label">Longitude</label>
+                            <label for="setting-longitude" class="form-label" data-i18n="admin_setting_longitude">Longitude</label>
                             <input type="number" step="any" class="form-control" id="setting-longitude" required>
                         </div>
                         <div class="col-auto d-flex align-items-end">
-                            <button type="button" class="btn btn-outline-secondary" onclick="detectLocation()">Detect Location</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="detectLocation()" data-i18n="admin_detect_location">Detect Location</button>
                         </div>
                     </div>
                     <hr>
-                    <h5 class="mb-3">Telegram Notifications</h5>
-                    <p class="text-muted small mb-3">Daily reports with power generation charts will be sent to a Telegram chat. Leave blank to disable.</p>
+                    <h5 class="mb-3" data-i18n="admin_telegram_title">Telegram Notifications</h5>
+                    <p class="text-muted small mb-3" data-i18n="admin_telegram_desc">Daily reports with power generation charts will be sent to a Telegram chat. Leave blank to disable.</p>
                     <div class="mb-3">
-                        <label for="setting-telegram-token" class="form-label">Bot Token</label>
-                        <input type="text" class="form-control" id="setting-telegram-token" placeholder="Optional" oninput="onTelegramTokenChange()">
-                        <div class="form-text">Open Telegram, search for <strong>@BotFather</strong>, send <code>/newbot</code>, follow the prompts, and copy the token it gives you.</div>
+                        <label for="setting-telegram-token" class="form-label" data-i18n="admin_telegram_token">Bot Token</label>
+                        <input type="text" class="form-control" id="setting-telegram-token" data-i18n-placeholder="admin_optional" oninput="onTelegramTokenChange()">
+                        <div class="form-text" data-i18n-html="admin_telegram_token_help">Open Telegram, search for <strong>@BotFather</strong>, send <code>/newbot</code>, follow the prompts, and copy the token it gives you.</div>
                     </div>
                     <div class="mb-3">
-                        <label for="setting-telegram-chatid" class="form-label">Chat ID</label>
+                        <label for="setting-telegram-chatid" class="form-label" data-i18n="admin_telegram_chatid">Chat ID</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="setting-telegram-chatid" placeholder="Optional">
-                            <button type="button" class="btn btn-outline-secondary" id="btn-detect-chatid" onclick="detectChatId()" style="display:none;">Detect Chat ID</button>
-                            <button type="button" class="btn btn-outline-info" id="btn-test-telegram" onclick="sendTestMessage()" style="display:none;">Send Test Message</button>
+                            <input type="text" class="form-control" id="setting-telegram-chatid" data-i18n-placeholder="admin_optional">
+                            <button type="button" class="btn btn-outline-secondary" id="btn-detect-chatid" onclick="detectChatId()" style="display:none;" data-i18n="admin_detect_chatid">Detect Chat ID</button>
+                            <button type="button" class="btn btn-outline-info" id="btn-test-telegram" onclick="sendTestMessage()" style="display:none;" data-i18n="admin_test_message">Send Test Message</button>
                         </div>
-                        <div class="form-text" id="telegram-chatid-help">Add your bot to a group or start a chat with it, then send a message.</div>
+                        <div class="form-text" id="telegram-chatid-help" data-i18n="admin_telegram_chatid_help">Add your bot to a group or start a chat with it, then send a message.</div>
                         <div id="telegram-chatid-actions" style="display:none;">
-                            <div class="form-text">Send a message to your bot, then click <strong>Detect Chat ID</strong> to fill this field automatically.</div>
+                            <div class="form-text" data-i18n-html="admin_telegram_chatid_help2">Send a message to your bot, then click <strong>Detect Chat ID</strong> to fill this field automatically.</div>
                         </div>
                         <div id="telegram-detect-result" class="mt-2"></div>
                     </div>
-                    <button type="submit" class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-settings" data-i18n="admin_save_settings">Save Settings</button>
                 </form>
             </div>
 
             <!-- Inverters Tab -->
             <div class="tab-pane fade" id="pane-inverters" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Configured Inverters</h5>
-                    <button class="btn btn-primary btn-sm" onclick="openInverterModal()">Add Inverter</button>
+                    <h5 class="mb-0" data-i18n="admin_inverters_title">Configured Inverters</h5>
+                    <button class="btn btn-primary btn-sm" onclick="openInverterModal()" data-i18n="admin_add_inverter">Add Inverter</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>IP Address</th>
-                                <th>Username</th>
-                                <th>Password</th>
-                                <th>Actions</th>
+                                <th data-i18n="admin_inverter_col_name">Name</th>
+                                <th data-i18n="admin_inverter_col_ip">IP Address</th>
+                                <th data-i18n="admin_inverter_col_username">Username</th>
+                                <th data-i18n="admin_inverter_col_password">Password</th>
+                                <th data-i18n="admin_inverter_col_actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="inverter-table-body">
                         </tbody>
                     </table>
                 </div>
-                <p id="no-inverters-msg" class="text-muted" style="display:none;">No inverters configured yet.</p>
+                <p id="no-inverters-msg" class="text-muted" style="display:none;" data-i18n="admin_no_inverters">No inverters configured yet.</p>
             </div>
 
             <!-- Tools Tab -->
             <div class="tab-pane fade" id="pane-tools" role="tabpanel">
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h5 class="card-title">Fix Incomplete Data</h5>
-                        <p class="card-text text-muted">Scans all historical data and interpolates missing 5-minute data points for every date on record. This can take a while depending on how much data you have.</p>
-                        <button type="button" class="btn btn-warning" id="btn-fix-data" onclick="runFixIncompleteData()">Run Fix Incomplete Data</button>
+                        <h5 class="card-title" data-i18n="admin_tool_fix_title">Fix Incomplete Data</h5>
+                        <p class="card-text text-muted" data-i18n="admin_tool_fix_desc">Scans all historical data and interpolates missing 5-minute data points for every date on record. This can take a while depending on how much data you have.</p>
+                        <button type="button" class="btn btn-warning" id="btn-fix-data" onclick="runFixIncompleteData()" data-i18n="admin_tool_fix_btn">Run Fix Incomplete Data</button>
                         <div id="fix-data-result" class="mt-3" style="display:none;">
                             <pre id="fix-data-log" class="bg-dark text-light p-3 rounded" style="max-height:400px; overflow-y:auto; font-size:0.85rem;"></pre>
                         </div>
@@ -202,27 +202,27 @@
                         <!-- Row 1: time, level, text search -->
                         <div class="row g-2 align-items-end mb-3">
                             <div class="col-auto">
-                                <label class="form-label mb-1">Period</label>
+                                <label class="form-label mb-1" data-i18n="admin_log_period">Period</label>
                                 <select class="form-select form-select-sm" id="log-hours" onchange="onLogPeriodChange()">
-                                    <option value="1" selected>Last 1 hour</option>
-                                    <option value="6">Last 6 hours</option>
-                                    <option value="24">Last 24 hours</option>
-                                    <option value="168">Last 7 days</option>
-                                    <option value="custom">Custom range</option>
+                                    <option value="1" selected data-i18n="admin_log_last1h">Last 1 hour</option>
+                                    <option value="6" data-i18n="admin_log_last6h">Last 6 hours</option>
+                                    <option value="24" data-i18n="admin_log_last24h">Last 24 hours</option>
+                                    <option value="168" data-i18n="admin_log_last7d">Last 7 days</option>
+                                    <option value="custom" data-i18n="admin_log_custom">Custom range</option>
                                 </select>
                             </div>
                             <div class="col-auto" id="log-custom-range" style="display:none;">
-                                <label class="form-label mb-1">From</label>
+                                <label class="form-label mb-1" data-i18n="label_from">From</label>
                                 <input type="datetime-local" class="form-control form-control-sm" id="log-from">
                             </div>
                             <div class="col-auto" id="log-custom-range-to" style="display:none;">
-                                <label class="form-label mb-1">To</label>
+                                <label class="form-label mb-1" data-i18n="label_to">To</label>
                                 <input type="datetime-local" class="form-control form-control-sm" id="log-to">
                             </div>
                             <div class="col-auto">
-                                <label class="form-label mb-1">Level</label>
+                                <label class="form-label mb-1" data-i18n="admin_log_level">Level</label>
                                 <select class="form-select form-select-sm" id="log-level">
-                                    <option value="">All</option>
+                                    <option value="" data-i18n="admin_log_level_all">All</option>
                                     <option value="debug">debug</option>
                                     <option value="info">info</option>
                                     <option value="warning">warning</option>
@@ -230,17 +230,17 @@
                                 </select>
                             </div>
                             <div class="col">
-                                <label class="form-label mb-1">Message search</label>
-                                <input type="text" class="form-control form-control-sm" id="log-search" placeholder="e.g. inverter">
+                                <label class="form-label mb-1" data-i18n="admin_log_search">Message search</label>
+                                <input type="text" class="form-control form-control-sm" id="log-search" data-i18n-placeholder="admin_log_search_placeholder">
                             </div>
                             <div class="col-auto align-self-end">
-                                <button class="btn btn-primary btn-sm" onclick="loadLogs()">Search</button>
+                                <button class="btn btn-primary btn-sm" onclick="loadLogs()" data-i18n="admin_log_search_btn">Search</button>
                             </div>
                         </div>
                         <!-- Row 2: context filter builder -->
                         <div class="d-flex align-items-center mb-2">
-                            <span class="small fw-semibold me-2">Context filters</span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addContextFilter()">+ Add filter</button>
+                            <span class="small fw-semibold me-2" data-i18n="admin_log_ctx_filters">Context filters</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addContextFilter()" data-i18n="admin_log_add_filter">+ Add filter</button>
                         </div>
                         <div id="ctx-filters"></div>
                     </div>
@@ -252,67 +252,77 @@
                     <table class="table table-sm table-hover align-middle" id="log-table" style="display:none;">
                         <thead class="table-dark">
                             <tr>
-                                <th style="width:160px;">Timestamp</th>
-                                <th style="width:80px;">Level</th>
-                                <th>Message</th>
-                                <th>Context</th>
+                                <th style="width:160px;" data-i18n="admin_log_col_ts">Timestamp</th>
+                                <th style="width:80px;" data-i18n="admin_log_col_level">Level</th>
+                                <th data-i18n="admin_log_col_message">Message</th>
+                                <th data-i18n="admin_log_col_context">Context</th>
                             </tr>
                         </thead>
                         <tbody id="log-tbody"></tbody>
                     </table>
                 </div>
-                <p id="log-empty" class="text-muted" style="display:none;">No log entries found for the selected filters.</p>
+                <p id="log-empty" class="text-muted" style="display:none;" data-i18n="admin_log_empty">No log entries found for the selected filters.</p>
             </div>
 
         </div>
     </div>
 
 </div>
+
+<footer class="container mt-4 pb-3" style="max-width: 720px;">
+    <hr>
+    <div class="d-flex align-items-center justify-content-end gap-2">
+        <label class="form-label mb-0 small text-muted" data-i18n="language_label">Language</label>
+        <select class="form-select form-select-sm lang-switcher" style="width:auto"></select>
+    </div>
+</footer>
 
 <!-- Inverter Modal -->
 <div class="modal fade" id="inverterModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="inverterModalTitle">Add Inverter</h5>
+                <h5 class="modal-title" id="inverterModalTitle" data-i18n="admin_modal_add_inverter">Add Inverter</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="inverter-edit-id">
                 <div class="mb-3">
-                    <label for="inverter-name" class="form-label">Friendly Name</label>
+                    <label for="inverter-name" class="form-label" data-i18n="admin_inverter_friendly_name">Friendly Name</label>
                     <input type="text" class="form-control" id="inverter-name" required>
                 </div>
                 <div class="mb-3">
-                    <label for="inverter-ip" class="form-label">IP Address / Hostname</label>
+                    <label for="inverter-ip" class="form-label" data-i18n="admin_inverter_ip_host">IP Address / Hostname</label>
                     <input type="text" class="form-control" id="inverter-ip" required>
                 </div>
                 <div class="mb-3">
-                    <label for="inverter-username" class="form-label">Username</label>
+                    <label for="inverter-username" class="form-label" data-i18n="admin_username">Username</label>
                     <input type="text" class="form-control" id="inverter-username" value="admin">
                 </div>
                 <div class="mb-3">
-                    <label for="inverter-password" class="form-label">Password</label>
+                    <label for="inverter-password" class="form-label" data-i18n="admin_password">Password</label>
                     <input type="text" class="form-control" id="inverter-password" value="admin">
                 </div>
                 <div id="inverter-test-result"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-info" onclick="testInverter()" id="btn-test-inverter">Test Connection</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveInverter()">Save</button>
+                <button type="button" class="btn btn-outline-info" onclick="testInverter()" id="btn-test-inverter" data-i18n="admin_test_connection">Test Connection</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="admin_cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveInverter()" data-i18n="admin_save">Save</button>
             </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="../lang/i18n.js"></script>
 
 <script>
 const API_BASE = 'api.php';
 let inverterModal;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    await i18nInit('../');
     inverterModal = new bootstrap.Modal(document.getElementById('inverterModal'));
     init();
 });
@@ -353,7 +363,7 @@ async function init() {
 
         showDashboard();
     } catch (e) {
-        showAlert('Failed to connect to the server.', 'danger');
+        showAlert(t('admin_alert_server_connect_failed'), 'danger');
     }
 }
 
@@ -449,7 +459,7 @@ async function submitDbSetup(e) {
 
     const btn = document.getElementById('btn-db-setup');
     btn.disabled = true;
-    btn.textContent = 'Testing...';
+    btn.textContent = t('admin_db_testing');
 
     const { ok, data } = await apiPost('setup-db', {
         host: document.getElementById('db-host').value,
@@ -460,12 +470,12 @@ async function submitDbSetup(e) {
     });
 
     btn.disabled = false;
-    btn.textContent = 'Test & Save';
+    btn.textContent = t('admin_db_save');
 
     if (ok) {
         showSection('admin-setup');
     } else {
-        showAlert(data.error || 'Connection failed');
+        showAlert(data.error || t('alert_server_error'));
     }
     return false;
 }
@@ -480,7 +490,7 @@ async function submitAdminSetup(e) {
     const confirm = document.getElementById('admin-password-confirm').value;
 
     if (password !== confirm) {
-        showAlert('Passwords do not match');
+        showAlert(t('admin_alert_passwords_no_match'));
         return false;
     }
 
@@ -495,10 +505,10 @@ async function submitAdminSetup(e) {
     btn.disabled = false;
 
     if (ok) {
-        showAlert('Admin account created. Please log in.', 'success');
+        showAlert(t('admin_alert_account_created'), 'success');
         showSection('login');
     } else {
-        showAlert(data.error || 'Failed to create account');
+        showAlert(data.error || t('alert_server_error'));
     }
     return false;
 }
@@ -523,7 +533,7 @@ async function submitLogin(e) {
         localStorage.setItem('deye_admin_token', data.token);
         showDashboard();
     } else {
-        showAlert(data.error || 'Login failed');
+        showAlert(data.error || t('alert_server_error'));
     }
     return false;
 }
@@ -596,16 +606,16 @@ async function submitSettings(e) {
     btn.disabled = false;
 
     if (ok) {
-        showAlert('Settings saved successfully.', 'success');
+        showAlert(t('admin_alert_settings_saved'), 'success');
     } else {
-        showAlert(data.error || 'Failed to save settings');
+        showAlert(data.error || t('alert_server_error'));
     }
     return false;
 }
 
 function detectLocation() {
     if (!navigator.geolocation) {
-        showAlert('Geolocation is not supported by your browser');
+        showAlert(t('admin_geolocation_unsupported'));
         return;
     }
 
@@ -615,7 +625,7 @@ function detectLocation() {
             document.getElementById('setting-longitude').value = position.coords.longitude.toFixed(6);
         },
         (error) => {
-            showAlert('Could not detect location: ' + error.message);
+            showAlert(t('admin_geolocation_failed', {error: error.message}));
         }
     );
 }
@@ -649,37 +659,37 @@ async function detectChatId() {
     const btn = document.getElementById('btn-detect-chatid');
 
     if (!token) {
-        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Bot Token first.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-warning py-2">${t('admin_telegram_enter_token')}</div>`;
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'Detecting...';
+    btn.textContent = t('admin_telegram_detecting');
     resultDiv.innerHTML = '';
 
     const { ok, data } = await apiPost('telegram-getupdates', { token });
 
     btn.disabled = false;
-    btn.textContent = 'Detect Chat ID';
+    btn.textContent = t('admin_detect_chatid');
 
     if (!ok) {
-        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || 'Failed to reach Telegram API')}</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || t('alert_server_error'))}</div>`;
         return;
     }
 
     if (!data.chats || data.chats.length === 0) {
-        resultDiv.innerHTML = '<div class="alert alert-warning py-2">No chats found. Send a message to your bot first, then try again.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-warning py-2">${t('admin_telegram_no_chats')}</div>`;
         return;
     }
 
     if (data.chats.length === 1) {
         document.getElementById('setting-telegram-chatid').value = data.chats[0].id;
-        resultDiv.innerHTML = `<div class="alert alert-success py-2">Chat ID detected: <strong>${escapeHtml(String(data.chats[0].id))}</strong> (${escapeHtml(data.chats[0].name)})</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-success py-2">${t('admin_telegram_chat_detected', {id: escapeHtml(String(data.chats[0].id)), name: escapeHtml(data.chats[0].name)})}</div>`;
         return;
     }
 
     // Multiple chats found — let user pick
-    let html = '<div class="alert alert-info py-2">Multiple chats found. Click to select:</div><div class="list-group mt-1">';
+    let html = `<div class="alert alert-info py-2">${t('admin_telegram_multiple_chats')}</div><div class="list-group mt-1">`;
     data.chats.forEach(chat => {
         html += `<button type="button" class="list-group-item list-group-item-action py-2" onclick="selectChatId('${escapeHtml(String(chat.id))}')">
             <strong>${escapeHtml(chat.name)}</strong> <span class="text-muted">(${escapeHtml(String(chat.id))})</span>
@@ -691,7 +701,7 @@ async function detectChatId() {
 
 function selectChatId(id) {
     document.getElementById('setting-telegram-chatid').value = id;
-    document.getElementById('telegram-detect-result').innerHTML = `<div class="alert alert-success py-2">Chat ID set to <strong>${escapeHtml(id)}</strong></div>`;
+    document.getElementById('telegram-detect-result').innerHTML = `<div class="alert alert-success py-2">${t('admin_telegram_chat_set', {id: escapeHtml(id)})}</div>`;
 }
 
 async function sendTestMessage() {
@@ -701,27 +711,27 @@ async function sendTestMessage() {
     const btn = document.getElementById('btn-test-telegram');
 
     if (!token) {
-        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Bot Token first.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-warning py-2">${t('admin_telegram_enter_token')}</div>`;
         return;
     }
     if (!chatId) {
-        resultDiv.innerHTML = '<div class="alert alert-warning py-2">Please enter a Chat ID first.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-warning py-2">${t('admin_telegram_enter_chatid')}</div>`;
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'Sending...';
+    btn.textContent = t('admin_telegram_sending');
     resultDiv.innerHTML = '';
 
     const { ok, data } = await apiPost('telegram-test-message', { token, chat_id: chatId });
 
     btn.disabled = false;
-    btn.textContent = 'Send Test Message';
+    btn.textContent = t('admin_test_message');
 
     if (ok && data.success) {
-        resultDiv.innerHTML = '<div class="alert alert-success py-2">Test message sent successfully! Check your Telegram chat.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-success py-2">${t('admin_telegram_test_success')}</div>`;
     } else {
-        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || 'Failed to send test message')}</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2">${escapeHtml(data.error || t('alert_server_error'))}</div>`;
     }
 }
 
@@ -749,8 +759,8 @@ async function loadInverters() {
             <td>${escapeHtml(inv.username)}</td>
             <td>${escapeHtml(inv.password)}</td>
             <td>
-                <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>Edit</button>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">Delete</button>
+                <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>${t('admin_inverter_edit')}</button>
+                <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">${t('admin_inverter_delete')}</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -763,7 +773,7 @@ function openInverterModal(inv = null) {
     document.getElementById('inverter-ip').value = inv ? inv.ip_address : '';
     document.getElementById('inverter-username').value = inv ? inv.username : 'admin';
     document.getElementById('inverter-password').value = inv ? inv.password : 'admin';
-    document.getElementById('inverterModalTitle').textContent = inv ? 'Edit Inverter' : 'Add Inverter';
+    document.getElementById('inverterModalTitle').textContent = inv ? t('admin_modal_edit_inverter') : t('admin_modal_add_inverter');
     inverterModal.show();
 }
 
@@ -783,7 +793,7 @@ async function saveInverter() {
     };
 
     if (!body.friendly_name || !body.ip_address) {
-        showAlert('Name and IP address are required');
+        showAlert(t('admin_alert_name_ip_required'));
         return;
     }
 
@@ -797,23 +807,23 @@ async function saveInverter() {
     if (result.ok) {
         inverterModal.hide();
         loadInverters();
-        showAlert('Inverter saved successfully.', 'success');
+        showAlert(t('admin_alert_inverter_saved'), 'success');
     } else {
-        showAlert(result.data.error || 'Failed to save inverter');
+        showAlert(result.data.error || t('alert_server_error'));
     }
 }
 
 async function deleteInverter(id) {
-    if (!confirm('Are you sure you want to remove this inverter?')) return;
+    if (!confirm(t('admin_confirm_delete_inverter'))) return;
 
     clearAlerts();
     const result = await apiDelete('inverters', id);
 
     if (result.ok) {
         loadInverters();
-        showAlert('Inverter removed.', 'success');
+        showAlert(t('admin_alert_inverter_removed'), 'success');
     } else {
-        showAlert(result.data.error || 'Failed to remove inverter');
+        showAlert(result.data.error || t('alert_server_error'));
     }
 }
 
@@ -824,13 +834,13 @@ async function testInverter() {
     const resultDiv = document.getElementById('inverter-test-result');
 
     if (!ip) {
-        resultDiv.innerHTML = '<div class="alert alert-warning alert-sm py-2 mt-2">Please enter an IP address first.</div>';
+        resultDiv.innerHTML = `<div class="alert alert-warning alert-sm py-2 mt-2">${t('admin_inverter_enter_ip')}</div>`;
         return;
     }
 
     const btn = document.getElementById('btn-test-inverter');
     btn.disabled = true;
-    btn.textContent = 'Testing...';
+    btn.textContent = t('admin_inverter_testing');
     resultDiv.innerHTML = '';
 
     try {
@@ -838,16 +848,16 @@ async function testInverter() {
         const data = await resp.json();
 
         if (resp.ok && !data.error) {
-            resultDiv.innerHTML = `<div class="alert alert-success py-2 mt-2">Connection successful! Inverter S/N: <strong>${escapeHtml(data.device_sn || 'N/A')}</strong></div>`;
+            resultDiv.innerHTML = `<div class="alert alert-success py-2 mt-2">${t('admin_inverter_connected', {sn: escapeHtml(data.device_sn || 'N/A')})}</div>`;
         } else {
-            resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">Connection failed: ${escapeHtml(data.error || 'Unknown error')}</div>`;
+            resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">${t('admin_inverter_connect_failed', {error: escapeHtml(data.error || 'Unknown error')})}</div>`;
         }
     } catch (e) {
-        resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">Connection failed: could not reach the server.</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-danger py-2 mt-2">${t('admin_inverter_connect_failed_server')}</div>`;
     }
 
     btn.disabled = false;
-    btn.textContent = 'Test Connection';
+    btn.textContent = t('admin_test_connection');
 }
 
 // ─── Tools ──────────────────────────────────────────────────────────────────
@@ -857,12 +867,12 @@ async function runFixIncompleteData() {
     const resultDiv = document.getElementById('fix-data-result');
     const logPre = document.getElementById('fix-data-log');
 
-    if (!confirm('This will scan all historical data and fill in missing data points. This may take several minutes. Continue?')) return;
+    if (!confirm(t('admin_confirm_fix_data'))) return;
 
     btn.disabled = true;
-    btn.textContent = 'Running...';
+    btn.textContent = t('admin_fix_running');
     resultDiv.style.display = '';
-    logPre.textContent = 'Starting...\n';
+    logPre.textContent = t('admin_fix_starting');
 
     try {
         const headers = { 'Authorization': 'Bearer ' + getToken() };
@@ -880,16 +890,16 @@ async function runFixIncompleteData() {
         }
 
         if (!resp.ok) {
-            logPre.textContent += '\nError: process failed.';
+            logPre.textContent += t('admin_fix_error');
         } else {
-            logPre.textContent += '\nDone.';
+            logPre.textContent += t('admin_fix_done');
         }
     } catch (e) {
-        logPre.textContent += '\nError: could not reach the server.';
+        logPre.textContent += t('admin_fix_error_server');
     }
 
     btn.disabled = false;
-    btn.textContent = 'Run Fix Incomplete Data';
+    btn.textContent = t('admin_tool_fix_btn');
 }
 
 // ─── Logs ────────────────────────────────────────────────────────────────────
@@ -937,12 +947,12 @@ function addContextFilter() {
     row.innerHTML = `
         <div class="col-auto">
             <select class="form-select form-select-sm ctx-filter-key" style="min-width:170px;">
-                <option value="">— select key —</option>
+                <option value="">${t('admin_ctx_select_key')}</option>
                 ${options}
             </select>
         </div>
         <div class="col-auto">
-            <input type="text" class="form-control form-control-sm ctx-filter-value" placeholder="value (empty = key exists)">
+            <input type="text" class="form-control form-control-sm ctx-filter-value" placeholder="${escapeHtml(t('admin_ctx_value_placeholder'))}">
         </div>
         <div class="col-auto">
             <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.closest('.ctx-filter-row').remove()">×</button>
@@ -965,7 +975,7 @@ async function loadLogs() {
     });
 
     const status = document.getElementById('log-status');
-    status.textContent = 'Loading…';
+    status.textContent = t('admin_log_loading');
 
     const params = new URLSearchParams();
     if (hours !== 'custom') {
@@ -983,7 +993,7 @@ async function loadLogs() {
             headers: { 'Authorization': 'Bearer ' + getToken() }
         });
         const data = await resp.json();
-        if (!resp.ok) { status.textContent = 'Error: ' + (data.error ?? resp.status); return; }
+        if (!resp.ok) { status.textContent = t('admin_log_error', {error: data.error ?? resp.status}); return; }
 
         const logs  = data.logs ?? [];
         const tbody = document.getElementById('log-tbody');
@@ -991,7 +1001,9 @@ async function loadLogs() {
 
         document.getElementById('log-table').style.display = logs.length ? '' : 'none';
         document.getElementById('log-empty').style.display = logs.length ? 'none' : '';
-        status.textContent = logs.length ? `${logs.length} entr${logs.length === 1 ? 'y' : 'ies'} found` : '';
+        status.textContent = logs.length
+            ? (logs.length === 1 ? t('admin_log_entry_found') : t('admin_log_entries_found', {count: logs.length}))
+            : '';
 
         for (const row of logs) {
             const badge = LOG_LEVEL_BADGES[row.level] ?? 'secondary';
@@ -1007,7 +1019,7 @@ async function loadLogs() {
             tbody.appendChild(tr);
         }
     } catch (e) {
-        status.textContent = 'Error: could not reach the server.';
+        status.textContent = t('admin_log_error', {error: t('alert_server_unreachable')});
     }
 }
 

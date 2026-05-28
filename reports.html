@@ -21,7 +21,7 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-4">
   <div class="container">
     <a class="navbar-brand" href="index.html">&#9730; Deye Solar</a>
-    <span class="navbar-text">Reports</span>
+    <span class="navbar-text" data-i18n="nav_reports">Reports</span>
   </div>
 </nav>
 
@@ -33,7 +33,7 @@
 
       <div class="row g-3 mb-3">
         <div class="col-md-6">
-          <h6 class="mb-2">Range A</h6>
+          <h6 class="mb-2" data-i18n="range_a">Range A</h6>
           <div class="mb-2">
             <select class="form-select form-select-sm" id="preset-a" onchange="onPresetChange('a')">
               <option value="">— Custom range —</option>
@@ -41,21 +41,21 @@
           </div>
           <div class="row g-2">
             <div class="col">
-              <label class="form-label mb-1 small">From</label>
+              <label class="form-label mb-1 small" data-i18n="label_from">From</label>
               <input type="date" class="form-control form-control-sm" id="a-from" onchange="clearPreset('a')">
             </div>
             <div class="col">
-              <label class="form-label mb-1 small">To</label>
+              <label class="form-label mb-1 small" data-i18n="label_to">To</label>
               <input type="date" class="form-control form-control-sm" id="a-to" onchange="clearPreset('a')">
             </div>
           </div>
           <div class="row g-2 mt-1">
             <div class="col">
-              <label class="form-label mb-1 small">Time from</label>
+              <label class="form-label mb-1 small" data-i18n="label_time_from">Time from</label>
               <input type="time" class="form-control form-control-sm" id="a-time-from" value="00:00">
             </div>
             <div class="col">
-              <label class="form-label mb-1 small">Time to</label>
+              <label class="form-label mb-1 small" data-i18n="label_time_to">Time to</label>
               <input type="time" class="form-control form-control-sm" id="a-time-to" value="23:59">
             </div>
           </div>
@@ -63,7 +63,7 @@
         </div>
 
         <div class="col-md-6">
-          <h6 class="mb-2">Range B <span class="text-muted fw-normal small">(optional comparison)</span></h6>
+          <h6 class="mb-2"><span data-i18n="range_b">Range B</span> <span class="text-muted fw-normal small" data-i18n="range_b_optional">(optional comparison)</span></h6>
           <div class="mb-2">
             <select class="form-select form-select-sm" id="preset-b" onchange="onPresetChange('b')">
               <option value="">— None —</option>
@@ -71,21 +71,21 @@
           </div>
           <div class="row g-2" id="range-b-dates">
             <div class="col">
-              <label class="form-label mb-1 small">From</label>
+              <label class="form-label mb-1 small" data-i18n="label_from">From</label>
               <input type="date" class="form-control form-control-sm" id="b-from" onchange="clearPreset('b')">
             </div>
             <div class="col">
-              <label class="form-label mb-1 small">To</label>
+              <label class="form-label mb-1 small" data-i18n="label_to">To</label>
               <input type="date" class="form-control form-control-sm" id="b-to" onchange="clearPreset('b')">
             </div>
           </div>
           <div class="row g-2 mt-1">
             <div class="col">
-              <label class="form-label mb-1 small">Time from</label>
+              <label class="form-label mb-1 small" data-i18n="label_time_from">Time from</label>
               <input type="time" class="form-control form-control-sm" id="b-time-from" value="00:00">
             </div>
             <div class="col">
-              <label class="form-label mb-1 small">Time to</label>
+              <label class="form-label mb-1 small" data-i18n="label_time_to">Time to</label>
               <input type="time" class="form-control form-control-sm" id="b-time-to" value="23:59">
             </div>
           </div>
@@ -95,28 +95,28 @@
 
       <div class="row g-2 align-items-end">
         <div class="col-auto">
-          <label class="form-label mb-1 small">Group by</label>
+          <label class="form-label mb-1 small" data-i18n="label_group_by">Group by</label>
           <select class="form-select form-select-sm" id="group-by" style="width:auto">
-            <option value="hour">Hour</option>
-            <option value="halfday">Morning and Afternoon</option>
-            <option value="day" selected>Day</option>
-            <option value="week">Week</option>
-            <option value="month">Month</option>
+            <option value="hour" data-i18n="group_hour">Hour</option>
+            <option value="halfday" data-i18n="group_halfday">Morning and Afternoon</option>
+            <option value="day" selected data-i18n="group_day">Day</option>
+            <option value="week" data-i18n="group_week">Week</option>
+            <option value="month" data-i18n="group_month">Month</option>
           </select>
         </div>
         <div class="col-auto">
-          <label class="form-label mb-1 small">Chart type</label>
+          <label class="form-label mb-1 small" data-i18n="label_chart_type">Chart type</label>
           <select class="form-select form-select-sm" id="chart-type" style="width:auto">
-            <option value="bar">Bars</option>
-            <option value="line">Lines</option>
-            <option value="doughnut">Doughnut</option>
+            <option value="bar" data-i18n="chart_bars">Bars</option>
+            <option value="line" data-i18n="chart_lines">Lines</option>
+            <option value="doughnut" data-i18n="chart_doughnut">Doughnut</option>
           </select>
         </div>
         <div class="col-auto">
-          <button class="btn btn-primary btn-sm" onclick="runReport()" id="btn-run">Run Report</button>
+          <button class="btn btn-primary btn-sm" onclick="runReport()" id="btn-run" data-i18n="btn_run_report">Run Report</button>
         </div>
         <div class="col-auto" id="loading-indicator" style="display:none">
-          <span class="text-muted small">Loading…</span>
+          <span class="text-muted small" data-i18n="loading">Loading…</span>
         </div>
       </div>
 
@@ -148,8 +148,17 @@
 
 </div>
 
+<footer class="container mt-4 pb-3">
+  <hr>
+  <div class="d-flex align-items-center justify-content-end gap-2">
+    <label class="form-label mb-0 small text-muted" data-i18n="language_label">Language</label>
+    <select class="form-select form-select-sm lang-switcher" style="width:auto"></select>
+  </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="lang/i18n.js"></script>
 
 <script>
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -169,22 +178,24 @@ const safeLocale = (() => {
 
 detectAndSetDarkMode();
 
-fetch('reports.php?action=config')
-  .then(r => r.json())
-  .then(cfg => {
-    southern     = (parseFloat(cfg.latitude) < 0);
-    allInverters = cfg.inverters || [];
-    presets      = buildPresets(southern);
-    populatePresetDropdowns();
-    renderInverterCheckboxes('a', allInverters);
-    renderInverterCheckboxes('b', allInverters);
-    applyPreset('a', presets.find(p => p.value === 'last30'));
-  })
-  .catch(() => {
-    presets = buildPresets(false);
-    populatePresetDropdowns();
-    applyPreset('a', presets.find(p => p.value === 'last30'));
-  });
+i18nInit().then(() => {
+  fetch('reports.php?action=config')
+    .then(r => r.json())
+    .then(cfg => {
+      southern     = (parseFloat(cfg.latitude) < 0);
+      allInverters = cfg.inverters || [];
+      presets      = buildPresets(southern);
+      populatePresetDropdowns();
+      renderInverterCheckboxes('a', allInverters);
+      renderInverterCheckboxes('b', allInverters);
+      applyPreset('a', presets.find(p => p.value === 'last30'));
+    })
+    .catch(() => {
+      presets = buildPresets(false);
+      populatePresetDropdowns();
+      applyPreset('a', presets.find(p => p.value === 'last30'));
+    });
+});
 
 // ─── Dark mode ───────────────────────────────────────────────────────────────
 
@@ -265,24 +276,24 @@ function buildPresets(isSouthern) {
   const list = [];
 
   // Rolling
-  list.push({ label:'Last 7 days',    value:'last7',   suggestB:'last7_prev',   ...rolling(7)   });
-  list.push({ label:'Last 30 days',   value:'last30',  suggestB:'last30_prev',  ...rolling(30)  });
-  list.push({ label:'Last 90 days',   value:'last90',  suggestB:'last90_prev',  ...rolling(90)  });
-  list.push({ label:'Last 12 months', value:'last365', suggestB:'last365_prev', ...rolling(365) });
+  list.push({ label:t('preset_last7'),    value:'last7',   suggestB:'last7_prev',   ...rolling(7)   });
+  list.push({ label:t('preset_last30'),   value:'last30',  suggestB:'last30_prev',  ...rolling(30)  });
+  list.push({ label:t('preset_last90'),   value:'last90',  suggestB:'last90_prev',  ...rolling(90)  });
+  list.push({ label:t('preset_last365'),  value:'last365', suggestB:'last365_prev', ...rolling(365) });
 
   // Rolling companions (hidden — used only as suggestB targets)
-  list.push({ label:'Last 7 days (prev year)',    value:'last7_prev',   hidden:true, ...shiftYearBack(rolling(7))   });
-  list.push({ label:'Last 30 days (prev year)',   value:'last30_prev',  hidden:true, ...shiftYearBack(rolling(30))  });
-  list.push({ label:'Last 90 days (prev year)',   value:'last90_prev',  hidden:true, ...shiftYearBack(rolling(90))  });
-  list.push({ label:'Last 12 months (prev year)', value:'last365_prev', hidden:true, ...shiftYearBack(rolling(365)) });
+  list.push({ label:t('preset_last7_prev'),    value:'last7_prev',   hidden:true, ...shiftYearBack(rolling(7))   });
+  list.push({ label:t('preset_last30_prev'),   value:'last30_prev',  hidden:true, ...shiftYearBack(rolling(30))  });
+  list.push({ label:t('preset_last90_prev'),   value:'last90_prev',  hidden:true, ...shiftYearBack(rolling(90))  });
+  list.push({ label:t('preset_last365_prev'),  value:'last365_prev', hidden:true, ...shiftYearBack(rolling(365)) });
 
   // Calendar
-  list.push({ label:'This month',           value:'thismonth',       ...thisMonth()       });
-  list.push({ label:'Last month',           value:'lastmonth',       ...lastMonth()       });
-  list.push({ label:'Month before last',    value:'monthbeforelast', ...monthBeforeLast() });
-  list.push({ label:'This year (YTD)',      value:'thisyearytd',     ...thisYearYTD()     });
-  list.push({ label:'Last year to date',    value:'lytd',            ...lastYearYTD()     });
-  list.push({ label:'Last full year',       value:'lastfullyear',    ...lastFullYear()    });
+  list.push({ label:t('preset_thismonth'),       value:'thismonth',       ...thisMonth()       });
+  list.push({ label:t('preset_lastmonth'),       value:'lastmonth',       ...lastMonth()       });
+  list.push({ label:t('preset_monthbeforelast'), value:'monthbeforelast', ...monthBeforeLast() });
+  list.push({ label:t('preset_thisyearytd'),     value:'thisyearytd',     ...thisYearYTD()     });
+  list.push({ label:t('preset_lytd'),            value:'lytd',            ...lastYearYTD()     });
+  list.push({ label:t('preset_lastfullyear'),    value:'lastfullyear',    ...lastFullYear()    });
 
   // Quarters: year DESC, q DESC within year — clean ordering with no inline companions
   for (let y = Y; y >= Y-2; y--) {
@@ -307,7 +318,7 @@ function buildPresets(isSouthern) {
       if (!d || d.from > todayStr) continue;
       const val = `${name.toLowerCase()}_${y}`;
       if (!list.find(p => p.value === val)) {
-        list.push({ label:`${name} ${y}`, value:val, suggestB:`${name.toLowerCase()}_${y-1}`, ...d });
+        list.push({ label:`${t('season_' + name.toLowerCase())} ${y}`, value:val, suggestB:`${name.toLowerCase()}_${y-1}`, ...d });
       }
     }
   }
@@ -316,7 +327,7 @@ function buildPresets(isSouthern) {
     const val = `${name.toLowerCase()}_${Y-3}`;
     if (!list.find(p => p.value === val)) {
       const d = getSeasonDates(Y-3, name, isSouthern);
-      if (d) list.push({ label:`${name} ${Y-3}`, value:val, hidden:true, ...d });
+      if (d) list.push({ label:`${t('season_' + name.toLowerCase())} ${Y-3}`, value:val, hidden:true, ...d });
     }
   }
 
@@ -344,15 +355,15 @@ function populatePresetDropdowns() {
 
   // Groups for optgroup
   const groups = [
-    { label: 'Rolling',   values: ['last7','last30','last90','last365'] },
-    { label: 'Calendar',  values: ['thismonth','lastmonth','monthbeforelast','thisyearytd','lytd','lastfullyear'] },
-    { label: 'Quarters',  fn: p => p.value.startsWith('q') },
-    { label: 'Seasons',   fn: p => ['spring','summer','autumn','winter'].some(s => p.value.startsWith(s)) },
+    { label: t('optgroup_rolling'),   values: ['last7','last30','last90','last365'] },
+    { label: t('optgroup_calendar'),  values: ['thismonth','lastmonth','monthbeforelast','thisyearytd','lytd','lastfullyear'] },
+    { label: t('optgroup_quarters'),  fn: p => p.value.startsWith('q') },
+    { label: t('optgroup_seasons'),   fn: p => ['spring','summer','autumn','winter'].some(s => p.value.startsWith(s)) },
   ];
 
   function buildOptions(selectId, includeNone) {
     const sel = document.getElementById(selectId);
-    sel.innerHTML = includeNone ? '<option value="">— None —</option>' : '<option value="">— Custom range —</option>';
+    sel.innerHTML = includeNone ? `<option value="">${t('select_none')}</option>` : `<option value="">${t('select_custom_range')}</option>`;
 
     for (const g of groups) {
       const members = g.values
@@ -448,12 +459,12 @@ async function runReport() {
 
   clearAlert();
 
-  if (!aFrom || !aTo) { showAlert('Please set a date range for Range A.'); return; }
-  if (aFrom > aTo)    { showAlert('Range A: "From" must be before "To".'); return; }
-  if ((bFrom || bTo) && !(bFrom && bTo)) { showAlert('Please fill both dates for Range B.'); return; }
-  if (bFrom && bTo && bFrom > bTo) { showAlert('Range B: "From" must be before "To".'); return; }
-  if (!hasSelectedInverters('a')) { showAlert('Select at least one inverter for Range A.'); return; }
-  if (bFrom && bTo && !hasSelectedInverters('b')) { showAlert('Select at least one inverter for Range B.'); return; }
+  if (!aFrom || !aTo) { showAlert(t('alert_set_range_a')); return; }
+  if (aFrom > aTo)    { showAlert(t('alert_range_a_order')); return; }
+  if ((bFrom || bTo) && !(bFrom && bTo)) { showAlert(t('alert_range_b_incomplete')); return; }
+  if (bFrom && bTo && bFrom > bTo) { showAlert(t('alert_range_b_order')); return; }
+  if (!hasSelectedInverters('a')) { showAlert(t('alert_select_inverter_a')); return; }
+  if (bFrom && bTo && !hasSelectedInverters('b')) { showAlert(t('alert_select_inverter_b')); return; }
 
   document.getElementById('btn-run').disabled = true;
   document.getElementById('loading-indicator').style.display = '';
@@ -474,10 +485,10 @@ async function runReport() {
   try {
     const resp = await fetch(url);
     const data = await resp.json();
-    if (!resp.ok) { showAlert(data.error || 'Server error.'); return; }
+    if (!resp.ok) { showAlert(data.error || t('alert_server_error')); return; }
     renderReport(data);
   } catch(e) {
-    showAlert('Could not reach the server.');
+    showAlert(t('alert_server_unreachable'));
   } finally {
     document.getElementById('btn-run').disabled = false;
     document.getElementById('loading-indicator').style.display = 'none';
@@ -506,39 +517,39 @@ function renderSummary(a, b) {
   container.innerHTML = '';
 
   const s = a.summary;
-  const t = b ? b.summary : null;
+  const summaryB = b ? b.summary : null;
 
   const cards = [
     {
-      label:    'Total Energy',
+      label:    t('summary_total_energy'),
       valA:     `${s.total_energy_kwh} kWh`,
-      valB:     t ? `${t.total_energy_kwh} kWh` : null,
-      delta:    t ? pctDelta(s.total_energy_kwh, t.total_energy_kwh) : null,
+      valB:     summaryB ? `${summaryB.total_energy_kwh} kWh` : null,
+      delta:    summaryB ? pctDelta(s.total_energy_kwh, summaryB.total_energy_kwh) : null,
     },
     {
-      label:    'Daily Average',
+      label:    t('summary_daily_avg'),
       valA:     `${s.daily_avg_kwh} kWh`,
-      valB:     t ? `${t.daily_avg_kwh} kWh` : null,
-      delta:    t ? pctDelta(s.daily_avg_kwh, t.daily_avg_kwh) : null,
+      valB:     summaryB ? `${summaryB.daily_avg_kwh} kWh` : null,
+      delta:    summaryB ? pctDelta(s.daily_avg_kwh, summaryB.daily_avg_kwh) : null,
     },
     {
-      label:    'Peak Power',
+      label:    t('summary_peak_power'),
       valA:     s.peak_power_w ? `${s.peak_power_w.toLocaleString()} W` : '—',
-      valB:     t ? (t.peak_power_w ? `${t.peak_power_w.toLocaleString()} W` : '—') : null,
-      delta:    t ? pctDelta(s.peak_power_w, t.peak_power_w) : null,
+      valB:     summaryB ? (summaryB.peak_power_w ? `${summaryB.peak_power_w.toLocaleString()} W` : '—') : null,
+      delta:    summaryB ? pctDelta(s.peak_power_w, summaryB.peak_power_w) : null,
     },
     {
-      label:    'Avg Temperature',
+      label:    t('summary_avg_temp'),
       valA:     s.avg_temp !== null ? `${s.avg_temp}°C` : '—',
-      valB:     t ? (t.avg_temp !== null ? `${t.avg_temp}°C` : '—') : null,
-      delta:    t && s.avg_temp !== null && t.avg_temp !== null
-                  ? { text: `${s.avg_temp - t.avg_temp > 0 ? '+' : ''}${s.avg_temp - t.avg_temp}°C vs B`, cls: 'delta-neutral' }
+      valB:     summaryB ? (summaryB.avg_temp !== null ? `${summaryB.avg_temp}°C` : '—') : null,
+      delta:    summaryB && s.avg_temp !== null && summaryB.avg_temp !== null
+                  ? (() => { const diff = s.avg_temp - summaryB.avg_temp; const sign = diff > 0 ? '+' : ''; return { text: t('delta_temp_vs_b', {sign, diff}), cls: 'delta-neutral' }; })()
                   : null,
     },
     {
-      label:    'Dominant Weather',
+      label:    t('summary_dominant_weather'),
       valA:     conditionEmoji(s.dominant_condition) + ' ' + (s.dominant_condition || '—'),
-      valB:     t ? conditionEmoji(t.dominant_condition) + ' ' + (t.dominant_condition || '—') : null,
+      valB:     summaryB ? conditionEmoji(summaryB.dominant_condition) + ' ' + (summaryB.dominant_condition || '—') : null,
       delta:    null,
     },
   ];
@@ -582,10 +593,10 @@ function renderSummary(a, b) {
 
 function pctDelta(a, b) {
   if (!b) return null;
-  const pct = Math.round(((a - b) / b) * 100);
+  const pct  = Math.round(((a - b) / b) * 100);
   const sign = pct >= 0 ? '+' : '';
   const cls  = pct > 0 ? 'delta-positive' : pct < 0 ? 'delta-negative' : 'delta-neutral';
-  return { text: `${sign}${pct}% vs B`, cls };
+  return { text: t('delta_vs_b', {sign, pct}), cls };
 }
 
 // — Chart —
@@ -599,7 +610,13 @@ function renderChart(a, b) {
   const bData     = b ? b.data : null;
   const chartType = document.getElementById('chart-type').value;
 
-  const groupLabel = { hour:'Hour', halfday:'Half-day', day:'Day', week:'Week', month:'Month' }[group] || 'Period';
+  const groupLabel = {
+    hour:    t('chart_period_hour'),
+    halfday: t('chart_period_halfday'),
+    day:     t('chart_period_day'),
+    week:    t('chart_period_week'),
+    month:   t('chart_period_month'),
+  }[group] || group;
   const maxLen     = Math.max(aData.length, bData ? bData.length : 0);
 
   // Relative labels ("Day 1", "Day 2"…) only make sense for date-based groups of equal length.
@@ -632,8 +649,8 @@ function renderChart(a, b) {
 
   const aDataset = {
     label: b
-      ? `Range A (${a.from} → ${a.to})${aInvSuffix ? ': ' + aInvSuffix : ''}`
-      : `Energy (${a.from} → ${a.to})${aInvSuffix ? ' — ' + aInvSuffix : ''}`,
+      ? `${t('range_a')} (${a.from} → ${a.to})${aInvSuffix ? ': ' + aInvSuffix : ''}`
+      : `${t('chart_energy_kwh')} (${a.from} → ${a.to})${aInvSuffix ? ' — ' + aInvSuffix : ''}`,
     data:            aValues,
     backgroundColor: aColors,
     borderColor:     isLine ? 'rgb(54, 162, 235)' : 'rgb(54, 162, 235)',
@@ -648,7 +665,7 @@ function renderChart(a, b) {
       i < bData.length ? (parseFloat(bData[i].energy_kwh) || 0) : null
     );
     datasets.push({
-      label: `Range B (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`,
+      label: `${t('range_b')} (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`,
       data:            bValues,
       backgroundColor: bColors,
       borderColor:     'rgb(255, 159, 64)',
@@ -683,7 +700,7 @@ function renderChart(a, b) {
         scales: {
           y: {
             beginAtZero: true,
-            title: { display: true, text: 'Energy (kWh)' }
+            title: { display: true, text: t('chart_energy_kwh') }
           }
         }
       }),
@@ -700,16 +717,16 @@ function renderTable(a, b) {
 
   if (b) {
     thead.innerHTML = `<tr>
-      <th>Period</th>
-      <th class="text-primary">Energy A (kWh)</th>
-      <th class="text-warning">Energy B (kWh)</th>
-      <th>Δ Energy</th>
-      <th class="text-primary">Peak A (W)</th>
-      <th class="text-warning">Peak B (W)</th>
-      <th class="text-primary">Temp A (°C)</th>
-      <th class="text-warning">Temp B (°C)</th>
-      <th class="text-primary">Weather A</th>
-      <th class="text-warning">Weather B</th>
+      <th>${t('table_period')}</th>
+      <th class="text-primary">${t('table_energy_a')}</th>
+      <th class="text-warning">${t('table_energy_b')}</th>
+      <th>${t('table_delta_energy')}</th>
+      <th class="text-primary">${t('table_peak_a')}</th>
+      <th class="text-warning">${t('table_peak_b')}</th>
+      <th class="text-primary">${t('table_temp_a')}</th>
+      <th class="text-warning">${t('table_temp_b')}</th>
+      <th class="text-primary">${t('table_weather_a')}</th>
+      <th class="text-warning">${t('table_weather_b')}</th>
     </tr>`;
 
     const maxLen = Math.max(a.data.length, b.data.length);
@@ -745,11 +762,11 @@ function renderTable(a, b) {
     }
   } else {
     thead.innerHTML = `<tr>
-      <th>Period</th>
-      <th>Energy (kWh)</th>
-      <th>Peak Power (W)</th>
-      <th>Avg Temp (°C)</th>
-      <th>Dominant Weather</th>
+      <th>${t('table_period')}</th>
+      <th>${t('table_energy')}</th>
+      <th>${t('table_peak_power')}</th>
+      <th>${t('table_avg_temp')}</th>
+      <th>${t('table_dominant_weather')}</th>
     </tr>`;
     tbody.innerHTML = a.data.map(r => `
       <tr>
@@ -766,27 +783,25 @@ function renderTable(a, b) {
 
 function formatChartLabel(dateStr, group) {
   if (!dateStr) return '—';
-  // halfday: period_start is 'morning' | 'afternoon'
-  if (group === 'halfday') return dateStr === 'morning' ? 'Morning' : 'Afternoon';
-  // hour: period_start is 'HH:00' (e.g. '09:00')
+  if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
   if (group === 'hour') return dateStr;
   const d    = new Date(dateStr + 'T12:00:00');
   const mm   = String(d.getMonth() + 1).padStart(2, '0');
   const dd   = String(d.getDate()).padStart(2, '0');
   const yyyy = d.getFullYear();
   if (group === 'month') return `${mm}/${yyyy}`;
-  if (group === 'week')  return `Wk ${mm}/${dd}/${yyyy}`;
+  if (group === 'week')  return t('chart_week_label', {date: `${mm}/${dd}/${yyyy}`});
   return `${mm}/${dd}/${yyyy}`;
 }
 
 function formatPeriodLabel(dateStr, group) {
   if (!dateStr) return '—';
-  if (group === 'halfday') return dateStr === 'morning' ? 'Morning' : 'Afternoon';
-  if (group === 'hour')    return dateStr; // already 'HH:00'
+  if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
+  if (group === 'hour')    return dateStr;
   const d      = new Date(dateStr + 'T12:00:00');
   const locale = safeLocale;
   if (group === 'month') return d.toLocaleDateString(locale, { year:'numeric', month:'short' });
-  if (group === 'week')  return 'Wk of ' + d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' });
+  if (group === 'week')  return t('period_week_of', {date: d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' })});
   return d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' });
 }
 
@@ -812,12 +827,12 @@ function renderInverterCheckboxes(side, inverters) {
 
   const cbId = sn => `inv-${side}-${sn.replace(/\W/g, '_')}`;
   container.innerHTML = `
-    <div class="small text-muted mb-1">Inverters</div>
+    <div class="small text-muted mb-1">${t('label_inverters')}</div>
     <div class="d-flex flex-wrap gap-2">
       <div class="form-check form-check-inline mb-0">
         <input class="form-check-input" type="checkbox" id="inv-${side}-all" checked
                onchange="onAllInverterChange('${side}')">
-        <label class="form-check-label small fw-semibold" for="inv-${side}-all">All</label>
+        <label class="form-check-label small fw-semibold" for="inv-${side}-all">${t('label_all')}</label>
       </div>
       ${inverters.map(inv => `
         <div class="form-check form-check-inline mb-0">

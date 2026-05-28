@@ -26,6 +26,7 @@ This is what is already working:
   - [x] Navigate to any previous date using prev/next buttons or a date picker
   - [x] Weather condition change indicators overlaid on the power chart (emoji + dashed line at each transition)
 - [x] Send a daily report to a Telegram Group (using a Telegram Bot)
+- [x] Multi-language UI (English, Brazilian Portuguese, Spanish) — language is stored system-wide and switchable from a footer dropdown on every page
 
 
 
@@ -152,3 +153,7 @@ Here's a list of new features I wish to add to this project in the future:
   - [x] Compare two date ranges side-by-side with delta indicators
   - [x] Per-range time-of-day filters and inverter selection
   - [x] Multiple chart types: bars, lines, doughnut
+- [x] Multi-language support (English, Português Brasileiro, Español)
+  - Language stored in the database, applies system-wide
+  - Switchable via a dropdown in the footer of every page
+  - Easily extensible: add `lang/xx.json` and one line in `i18n.js`

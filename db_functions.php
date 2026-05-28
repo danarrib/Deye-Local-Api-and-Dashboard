@@ -88,6 +88,8 @@
         )";
         pg_query($db, $query);
 
+        pg_query($db, "ALTER TABLE powerplant ADD COLUMN IF NOT EXISTS language VARCHAR(10) NOT NULL DEFAULT 'en'");
+
         // Create the logs table
         $query = "CREATE TABLE IF NOT EXISTS logs (
             id BIGSERIAL PRIMARY KEY NOT NULL,
