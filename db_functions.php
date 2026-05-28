@@ -99,6 +99,24 @@
         pg_query($db, $query);
 
         pg_query($db, "CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs (created_at DESC)");
+
+        // Migrate pvstatsdetail.created_at from TIMESTAMP WITHOUT TIME ZONE to TIMESTAMPTZ.
+        // The column was originally created without timezone info but always stored UTC values
+        // (PHP inserts Z-suffixed ISO strings). The USING clause reattaches the UTC declaration.
+        pg_query($db, "DO \$\$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name  = 'pvstatsdetail'
+                      AND column_name = 'created_at'
+                      AND data_type   = 'timestamp without time zone'
+                ) THEN
+                    ALTER TABLE pvstatsdetail
+                        ALTER COLUMN created_at TYPE TIMESTAMPTZ
+                        USING created_at AT TIME ZONE 'UTC';
+                END IF;
+            END
+        \$\$");
     }
 
     function save_inverter_data($data) {
@@ -136,7 +154,7 @@
         $end_utc = clone $start_utc;
         $end_utc->modify('+1 day');
 
-        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverters idet on pd.device_sn = idet.device_sn WHERE pd.created_at at time zone 'UTC' between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
+        $query = "SELECT DISTINCT ON (pd.device_sn) pd.*, idet.friendly_name FROM pvstatsdetail pd left join inverters idet on pd.device_sn = idet.device_sn WHERE pd.created_at between $1 AND $2 ORDER BY pd.device_sn, pd.created_at DESC;";
         $result = pg_query_params($db, $query, [$start_utc->format('Y-m-d H:i:sO'), $end_utc->format('Y-m-d H:i:sO')]);
 
         return pg_fetch_all($result) ?: [];
@@ -195,13 +213,14 @@
     function get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date) {
         global $db;
 
-        $reference_date = $reference_date->format('Y-m-d');
+        $day_start_utc = (clone $reference_date)->setTimezone(new DateTimeZone('UTC'));
+        $day_end_utc   = (clone $day_start_utc)->modify('+1 day');
         $ref_now = new DateTime(null, new DateTimeZone('UTC'));
 
         $query = "WITH time_intervals AS (
     SELECT generate_series(
-        date_trunc('day', $1::date AT TIME ZONE 'UTC'),
-        date_trunc('day', $1::date AT TIME ZONE 'UTC' + interval '1 day'),
+        $1::timestamptz,
+        $2::timestamptz,
         interval '5 minutes'
     ) AS interval_start
 )
@@ -216,7 +235,10 @@ LEFT JOIN LATERAL (
 ) pvsd ON pvsd.device_sn = idet.device_sn
 ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
 
-        $result = pg_query_params($db, $query, [$reference_date]);
+        $result = pg_query_params($db, $query, [
+            $day_start_utc->format('Y-m-d H:i:sO'),
+            $day_end_utc->format('Y-m-d H:i:sO'),
+        ]);
         $data = pg_fetch_all($result) ?: [];
 
         $data = array_values(array_filter($data, function($row) use ($sunrise, $sunset, $ref_now) {
@@ -235,13 +257,14 @@ ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
     function get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date) {
         global $db;
 
-        $reference_date = $reference_date->format('Y-m-d');
+        $day_start_utc = (clone $reference_date)->setTimezone(new DateTimeZone('UTC'));
+        $day_end_utc   = (clone $day_start_utc)->modify('+1 day');
         $ref_now = new DateTime(null, new DateTimeZone('UTC'));
 
         $query = "WITH time_intervals AS (
     SELECT generate_series(
-        date_trunc('day', $1::date AT TIME ZONE 'UTC'),
-        date_trunc('day', $1::date AT TIME ZONE 'UTC' + interval '1 day'),
+        $1::timestamptz,
+        $2::timestamptz,
         interval '5 minutes'
     ) AS interval_start
 )
@@ -258,7 +281,10 @@ LEFT JOIN LATERAL (
 GROUP BY ti.interval_start
 ORDER BY ti.interval_start;";
 
-        $result = pg_query_params($db, $query, [$reference_date]);
+        $result = pg_query_params($db, $query, [
+            $day_start_utc->format('Y-m-d H:i:sO'),
+            $day_end_utc->format('Y-m-d H:i:sO'),
+        ]);
         $data = pg_fetch_all($result) ?: [];
 
         $data = array_values(array_filter($data, function($row) use ($sunrise, $sunset, $ref_now) {
@@ -284,7 +310,7 @@ ORDER BY ti.interval_start;";
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 		order by reference_date, pd.device_sn
@@ -307,7 +333,7 @@ select max(total_energy) as top_energy from total_energy where reference_date <>
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 	)
@@ -331,9 +357,9 @@ select max(total_energy) as top_energy from total_energy where year_month <> $1;
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select ((pd.created_at at time zone 'UTC') at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
 		from pvstatsdetail pd
-		where ((pd.created_at at time zone 'UTC') at time zone '$tz') between $1::date and $2::date
+		where (pd.created_at at time zone '$tz') between $1::date and $2::date
 		group by reference_date, pd.device_sn
 	)
 	select to_char(ie.reference_date, 'YYYY-MM') as year_month, SUM(energy) as total_energy from inverter_energy ie
@@ -348,8 +374,11 @@ select max(total_energy) as total_energy from total_energy;";
 
     function fix_incomplete_data($reference_date) {
         global $db;
+        global $powerplant_timezone;
 
-        $reference_date = $reference_date->format('Y-m-d');
+        $day_start = new DateTime($reference_date->format('Y-m-d') . ' 00:00:00', new DateTimeZone($powerplant_timezone));
+        $day_start_utc = (clone $day_start)->setTimezone(new DateTimeZone('UTC'));
+        $day_end_utc   = (clone $day_start_utc)->modify('+1 day');
 
         $query = "with pvdata as (
 select		p.device_sn,
@@ -358,7 +387,7 @@ select		p.device_sn,
 			p.power_today as energy_today,
 			p.power_total as energy_total
 from 		pvstatsdetail p
-where 		p.created_at between ($1::date)::timestamptz and ($1::date + interval '1 day' - interval '1 second')::timestamptz
+where 		p.created_at >= $1 and p.created_at < $2
 order by	device_sn, created_at
 ),
 pvgapbegin as (
@@ -418,7 +447,10 @@ where not exists (
     and p.created_at = pdr.created_at
 )";
 
-        $result = pg_query_params($db, $query, [$reference_date]);
+        $result = pg_query_params($db, $query, [
+            $day_start_utc->format('Y-m-d H:i:sO'),
+            $day_end_utc->format('Y-m-d H:i:sO'),
+        ]);
         return pg_affected_rows($result);
     }
 
@@ -428,7 +460,7 @@ where not exists (
 
         $tz = pg_escape_string($db, $powerplant_timezone);
 
-        $query = "SELECT DISTINCT ((created_at at time zone 'UTC') at time zone '$tz')::date as reference_date FROM pvstatsdetail ORDER BY reference_date;";
+        $query = "SELECT DISTINCT (created_at at time zone '$tz')::date as reference_date FROM pvstatsdetail ORDER BY reference_date;";
         $result = pg_query($db, $query);
         $dates = pg_fetch_all($result);
 
