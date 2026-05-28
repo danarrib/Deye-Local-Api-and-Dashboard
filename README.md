@@ -78,6 +78,8 @@ The reports page lets you analyse historical production data with flexible group
 - **Inverter selection:** when multiple inverters are configured, choose which ones to include per range
 - **Summary cards:** total energy, daily average, peak power, average temperature, and dominant weather condition — with percentage deltas when comparing two ranges
 
+<img alt="Reports screenshot" src="docs/reports.png" />
+
 ### API
 Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
 
