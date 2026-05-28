@@ -13,7 +13,10 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary mb-4" id="main-navbar" style="display:none;">
     <div class="container">
         <a class="navbar-brand" href="#">Deye Admin</a>
-        <button class="btn btn-outline-secondary btn-sm" id="btn-logout" onclick="logout()" data-i18n="admin_logout">Logout</button>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="../index.html" data-i18n="admin_go_dashboard">Dashboard</a>
+            <button class="btn btn-outline-secondary btn-sm" id="btn-logout" onclick="logout()" data-i18n="admin_logout">Logout</button>
+        </div>
     </div>
 </nav>
 
@@ -161,23 +164,7 @@
                     <h5 class="mb-0" data-i18n="admin_inverters_title">Configured Inverters</h5>
                     <button class="btn btn-primary btn-sm" onclick="openInverterModal()" data-i18n="admin_add_inverter">Add Inverter</button>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th data-i18n="admin_inverter_col_name">Name</th>
-                                <th data-i18n="admin_inverter_col_ip">IP Address</th>
-                                <th data-i18n="admin_inverter_col_username">Username</th>
-                                <th data-i18n="admin_inverter_col_password">Password</th>
-                                <th data-i18n="admin_inverter_col_device_sn">Logger Serial</th>
-                                <th data-i18n="admin_inverter_col_solarman">SolarmanV5</th>
-                                <th data-i18n="admin_inverter_col_actions">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inverter-table-body">
-                        </tbody>
-                    </table>
-                </div>
+                <div id="inverter-list"></div>
                 <p id="no-inverters-msg" class="text-muted" style="display:none;" data-i18n="admin_no_inverters">No inverters configured yet.</p>
             </div>
 
@@ -741,10 +728,10 @@ async function sendTestMessage() {
 
 async function loadInverters() {
     const data = await apiGet('inverters');
-    const tbody = document.getElementById('inverter-table-body');
+    const list  = document.getElementById('inverter-list');
     const noMsg = document.getElementById('no-inverters-msg');
 
-    tbody.innerHTML = '';
+    list.innerHTML = '';
 
     if (!data.inverters || data.inverters.length === 0) {
         noMsg.style.display = '';
@@ -764,20 +751,24 @@ async function loadInverters() {
             ? `<span class="badge bg-success">${t('admin_inverter_solarman_enabled')}</span>`
             : `<span class="badge bg-secondary">${t('admin_inverter_solarman_disabled')}</span>`;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${escapeHtml(inv.friendly_name)}</td>
-            <td>${escapeHtml(inv.ip_address)}</td>
-            <td>${escapeHtml(inv.username)}</td>
-            <td>${escapeHtml(inv.password)}</td>
-            <td>${deviceSnHtml}</td>
-            <td>${solarmanHtml}</td>
-            <td>
-                <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>${t('admin_inverter_edit')}</button>
-                <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">${t('admin_inverter_delete')}</button>
-            </td>
+        const item = document.createElement('div');
+        item.className = 'border rounded mb-2 px-3 py-2';
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>${escapeHtml(inv.friendly_name)}</strong>
+                ${solarmanHtml}
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-1 small text-muted">
+                <span>${escapeHtml(inv.ip_address)}</span>
+                <span>${escapeHtml(inv.username)} / ${escapeHtml(inv.password)}</span>
+                <span>SN: ${deviceSnHtml}</span>
+                <span class="ms-auto">
+                    <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>${t('admin_inverter_edit')}</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">${t('admin_inverter_delete')}</button>
+                </span>
+            </div>
         `;
-        tbody.appendChild(tr);
+        list.appendChild(item);
     });
 }
 

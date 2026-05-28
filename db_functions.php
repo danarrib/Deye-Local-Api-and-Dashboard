@@ -338,7 +338,8 @@ ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
 )
 SELECT
     ti.interval_start as time,
-    SUM(pvsd.power_now) as total_power_now
+    SUM(pvsd.power_now) as total_power_now,
+    ROUND(AVG(pvsd.radiator_temp))::int AS avg_radiator_temp
 FROM time_intervals ti
 LEFT JOIN LATERAL (
     SELECT *
@@ -537,6 +538,19 @@ where not exists (
             $affected_rows = fix_incomplete_data($ref_date);
             echo "<p>Processed date " . $date['reference_date'] . ", affected rows: " . $affected_rows . "</p>\n";
         }
+    }
+
+    function get_min_date() {
+        global $db;
+        global $powerplant_timezone;
+
+        $result = pg_query_params($db,
+            "SELECT (MIN(created_at) AT TIME ZONE $1)::date FROM pvstatsdetail",
+            [$powerplant_timezone]
+        );
+        if (!$result) return null;
+        $row = pg_fetch_row($result);
+        return $row[0] ?? null; // 'YYYY-MM-DD' or null when table is empty
     }
 
     function purge_old_logs($days = 30) {

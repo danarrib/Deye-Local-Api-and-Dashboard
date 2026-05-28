@@ -113,6 +113,19 @@
           </select>
         </div>
         <div class="col-auto">
+          <label class="form-label mb-1 small" data-i18n="label_chart_show">Show</label>
+          <div class="d-flex gap-3 pt-1">
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="chk-power" checked>
+              <label class="form-check-label small" for="chk-power" data-i18n="chk_power">Power</label>
+            </div>
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="chk-radiator">
+              <label class="form-check-label small" for="chk-radiator" data-i18n="chk_radiator_temp">Radiator Temp</label>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto">
           <button class="btn btn-primary btn-sm" onclick="runReport()" id="btn-run" data-i18n="btn_run_report">Run Report</button>
         </div>
         <div class="col-auto" id="loading-indicator" style="display:none">
@@ -547,6 +560,14 @@ function renderSummary(a, b) {
                   : null,
     },
     {
+      label:    t('summary_avg_radiator_temp'),
+      valA:     s.avg_radiator_temp !== null ? `${s.avg_radiator_temp}°C` : '—',
+      valB:     summaryB ? (summaryB.avg_radiator_temp !== null ? `${summaryB.avg_radiator_temp}°C` : '—') : null,
+      delta:    summaryB && s.avg_radiator_temp !== null && summaryB.avg_radiator_temp !== null
+                  ? (() => { const diff = s.avg_radiator_temp - summaryB.avg_radiator_temp; const sign = diff > 0 ? '+' : ''; return { text: t('delta_temp_vs_b', {sign, diff}), cls: 'delta-neutral' }; })()
+                  : null,
+    },
+    {
       label:    t('summary_dominant_weather'),
       valA:     conditionEmoji(s.dominant_condition) + ' ' + (s.dominant_condition || '—'),
       valB:     summaryB ? conditionEmoji(summaryB.dominant_condition) + ' ' + (summaryB.dominant_condition || '—') : null,
@@ -605,10 +626,14 @@ function renderChart(a, b) {
   const ctx = document.getElementById('report-chart');
   if (reportChart) { reportChart.destroy(); reportChart = null; }
 
-  const group     = a.group;
-  const aData     = a.data;
-  const bData     = b ? b.data : null;
-  const chartType = document.getElementById('chart-type').value;
+  const group       = a.group;
+  const aData       = a.data;
+  const bData       = b ? b.data : null;
+  const chartType   = document.getElementById('chart-type').value;
+  const showPower   = document.getElementById('chk-power').checked;
+  const showRadiator= document.getElementById('chk-radiator').checked;
+
+  if (!showPower && !showRadiator) return;
 
   const groupLabel = {
     hour:    t('chart_period_hour'),
@@ -617,11 +642,9 @@ function renderChart(a, b) {
     week:    t('chart_period_week'),
     month:   t('chart_period_month'),
   }[group] || group;
-  const maxLen     = Math.max(aData.length, bData ? bData.length : 0);
+  const maxLen = Math.max(aData.length, bData ? bData.length : 0);
 
-  // Relative labels ("Day 1", "Day 2"…) only make sense for date-based groups of equal length.
-  const useRelative = bData && bData.length === aData.length
-                   && !['hour','halfday'].includes(group);
+  const useRelative = bData && bData.length === aData.length && !['hour','halfday'].includes(group);
 
   const labels = Array.from({ length: maxLen }, (_, i) => {
     if (useRelative) return `${groupLabel} ${i + 1}`;
@@ -629,61 +652,99 @@ function renderChart(a, b) {
     return src ? formatChartLabel(src.period_start, group) : `${groupLabel} ${i + 1}`;
   });
 
-  const aValues = Array.from({ length: maxLen }, (_, i) =>
-    i < aData.length ? (parseFloat(aData[i].energy_kwh) || 0) : null
-  );
-
   const aInvSuffix = getInverterLabel('a');
   const bInvSuffix = b ? getInverterLabel('b') : '';
-
   const isDoughnut = chartType === 'doughnut';
   const isLine     = chartType === 'line';
+  const useDualY   = showPower && showRadiator && !isDoughnut;
 
-  // Doughnut slices get per-point colors; bar/line use a solid color per dataset.
-  const aColors = isDoughnut
-    ? aValues.map((_, i) => `hsla(${Math.round((i / Math.max(maxLen, 1)) * 360)}, 65%, 55%, 0.85)`)
-    : 'rgba(54, 162, 235, 0.7)';
-  const bColors = isDoughnut
-    ? aColors
-    : 'rgba(255, 159, 64, 0.7)';
+  const sliceColors = Array.from({ length: maxLen }, (_, i) =>
+    `hsla(${Math.round((i / Math.max(maxLen, 1)) * 360)}, 65%, 55%, 0.85)`
+  );
 
-  const aDataset = {
-    label: b
-      ? `${t('range_a')} (${a.from} → ${a.to})${aInvSuffix ? ': ' + aInvSuffix : ''}`
-      : `${t('chart_energy_kwh')} (${a.from} → ${a.to})${aInvSuffix ? ' — ' + aInvSuffix : ''}`,
-    data:            aValues,
-    backgroundColor: aColors,
-    borderColor:     isLine ? 'rgb(54, 162, 235)' : 'rgb(54, 162, 235)',
-    borderWidth:     1,
-    ...(isLine ? { fill: false, tension: 0.3, pointRadius: 3 } : {}),
-  };
-
-  const datasets = [aDataset];
-
-  if (bData) {
-    const bValues = Array.from({ length: maxLen }, (_, i) =>
-      i < bData.length ? (parseFloat(bData[i].energy_kwh) || 0) : null
-    );
-    datasets.push({
-      label: `${t('range_b')} (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`,
-      data:            bValues,
-      backgroundColor: bColors,
-      borderColor:     'rgb(255, 159, 64)',
-      borderWidth:     1,
-      ...(isLine ? { fill: false, tension: 0.3, pointRadius: 3 } : {}),
-    });
+  // Helper: build one dataset object
+  function makeDataset(label, data, hexBorder, hexFill, yAxisID, extraOpts = {}) {
+    return {
+      label,
+      data,
+      backgroundColor: isDoughnut ? sliceColors : hexFill,
+      borderColor: hexBorder,
+      borderWidth: 1,
+      ...(yAxisID ? { yAxisID } : {}),
+      ...(isLine || extraOpts.forceLineStyle
+        ? { fill: false, tension: 0.3, pointRadius: 3 }
+        : {}),
+      ...(extraOpts.spanGaps ? { spanGaps: true } : {}),
+    };
   }
 
-  const tooltipAfterLabel = (ctx) => {
-    const src = ctx.datasetIndex === 0 ? aData : (bData || null);
-    const row = src ? src[ctx.dataIndex] : null;
+  const aEnergy   = Array.from({ length: maxLen }, (_, i) =>
+    i < aData.length ? (parseFloat(aData[i].energy_kwh) || 0) : null);
+  const aRadiator = Array.from({ length: maxLen }, (_, i) =>
+    i < aData.length && aData[i].avg_radiator_temp !== null && aData[i].avg_radiator_temp !== ''
+      ? parseFloat(aData[i].avg_radiator_temp) : null);
+
+  const datasets = [];
+  const datasetSources = []; // parallel array: which source row array maps to each dataset
+
+  const aLabel = b
+    ? `${t('range_a')} (${a.from} → ${a.to})${aInvSuffix ? ': ' + aInvSuffix : ''}`
+    : `${t('chart_energy_kwh')} (${a.from} → ${a.to})${aInvSuffix ? ' — ' + aInvSuffix : ''}`;
+
+  if (showPower) {
+    datasets.push(makeDataset(aLabel, aEnergy, 'rgb(54,162,235)', 'rgba(54,162,235,0.7)', useDualY ? 'y' : undefined));
+    datasetSources.push(aData);
+  }
+  if (showRadiator) {
+    const rLabel = b ? `${t('chk_radiator_temp')} A (${a.from} → ${a.to})` : `${t('chk_radiator_temp')} (${a.from} → ${a.to})`;
+    datasets.push(makeDataset(rLabel, aRadiator, 'rgb(255,99,132)', 'rgba(255,99,132,0.7)', useDualY ? 'y2' : undefined, { forceLineStyle: true, spanGaps: true }));
+    datasetSources.push(aData);
+  }
+
+  if (bData) {
+    const bEnergy   = Array.from({ length: maxLen }, (_, i) =>
+      i < bData.length ? (parseFloat(bData[i].energy_kwh) || 0) : null);
+    const bRadiator = Array.from({ length: maxLen }, (_, i) =>
+      i < bData.length && bData[i].avg_radiator_temp !== null && bData[i].avg_radiator_temp !== ''
+        ? parseFloat(bData[i].avg_radiator_temp) : null);
+
+    const bLabel = `${t('range_b')} (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`;
+    if (showPower) {
+      datasets.push(makeDataset(bLabel, bEnergy, 'rgb(255,159,64)', 'rgba(255,159,64,0.7)', useDualY ? 'y' : undefined));
+      datasetSources.push(bData);
+    }
+    if (showRadiator) {
+      const rbLabel = `${t('chk_radiator_temp')} B (${b.from} → ${b.to})`;
+      datasets.push(makeDataset(rbLabel, bRadiator, 'rgb(75,192,192)', 'rgba(75,192,192,0.7)', useDualY ? 'y2' : undefined, { forceLineStyle: true, spanGaps: true }));
+      datasetSources.push(bData);
+    }
+  }
+
+  const tooltipAfterLabel = (tooltipCtx) => {
+    const src = datasetSources[tooltipCtx.datasetIndex];
+    const row = src ? src[tooltipCtx.dataIndex] : null;
     if (!row) return '';
     const lines = [];
     if (row.period_start) lines.push(`Period: ${formatChartLabel(row.period_start, group)}`);
     if (row.peak_power_w) lines.push(`Peak: ${parseInt(row.peak_power_w).toLocaleString()} W`);
     if (row.avg_temp !== null && row.avg_temp !== '') lines.push(`Avg temp: ${row.avg_temp}°C`);
+    if (row.avg_radiator_temp !== null && row.avg_radiator_temp !== '') lines.push(`Radiator: ${row.avg_radiator_temp}°C`);
     if (row.dominant_condition) lines.push(`Weather: ${conditionEmoji(row.dominant_condition)} ${row.dominant_condition}`);
     return lines;
+  };
+
+  const scales = isDoughnut ? {} : {
+    y: {
+      beginAtZero: showPower,
+      title: { display: useDualY || showPower, text: showPower ? t('chart_energy_kwh') : '°C' },
+    },
+    ...(useDualY ? {
+      y2: {
+        position: 'right',
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: '°C' },
+      }
+    } : {}),
   };
 
   reportChart = new Chart(ctx, {
@@ -691,19 +752,8 @@ function renderChart(a, b) {
     data: { labels, datasets },
     options: {
       responsive: true,
-      plugins: {
-        tooltip: {
-          callbacks: { afterLabel: tooltipAfterLabel }
-        }
-      },
-      ...(isDoughnut ? {} : {
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: t('chart_energy_kwh') }
-          }
-        }
-      }),
+      plugins: { tooltip: { callbacks: { afterLabel: tooltipAfterLabel } } },
+      ...(isDoughnut ? {} : { scales }),
     }
   });
 }
@@ -725,6 +775,8 @@ function renderTable(a, b) {
       <th class="text-warning">${t('table_peak_b')}</th>
       <th class="text-primary">${t('table_temp_a')}</th>
       <th class="text-warning">${t('table_temp_b')}</th>
+      <th class="text-primary">${t('table_radiator_temp_a')}</th>
+      <th class="text-warning">${t('table_radiator_temp_b')}</th>
       <th class="text-primary">${t('table_weather_a')}</th>
       <th class="text-warning">${t('table_weather_b')}</th>
     </tr>`;
@@ -753,8 +805,10 @@ function renderTable(a, b) {
         <td>${delta}</td>
         <td>${ra && ra.peak_power_w ? parseInt(ra.peak_power_w).toLocaleString() : '—'}</td>
         <td>${rb && rb.peak_power_w ? parseInt(rb.peak_power_w).toLocaleString() : '—'}</td>
-        <td>${ra && ra.avg_temp !== null && ra.avg_temp !== '' ? ra.avg_temp : '—'}</td>
-        <td>${rb && rb.avg_temp !== null && rb.avg_temp !== '' ? rb.avg_temp : '—'}</td>
+        <td>${ra && ra.avg_temp !== null && ra.avg_temp !== '' ? ra.avg_temp + '°C' : '—'}</td>
+        <td>${rb && rb.avg_temp !== null && rb.avg_temp !== '' ? rb.avg_temp + '°C' : '—'}</td>
+        <td>${ra && ra.avg_radiator_temp !== null && ra.avg_radiator_temp !== '' ? ra.avg_radiator_temp + '°C' : '—'}</td>
+        <td>${rb && rb.avg_radiator_temp !== null && rb.avg_radiator_temp !== '' ? rb.avg_radiator_temp + '°C' : '—'}</td>
         <td class="small">${ra && ra.dominant_condition ? conditionEmoji(ra.dominant_condition)+' '+ra.dominant_condition : '—'}</td>
         <td class="small">${rb && rb.dominant_condition ? conditionEmoji(rb.dominant_condition)+' '+rb.dominant_condition : '—'}</td>
       `;
@@ -766,6 +820,7 @@ function renderTable(a, b) {
       <th>${t('table_energy')}</th>
       <th>${t('table_peak_power')}</th>
       <th>${t('table_avg_temp')}</th>
+      <th>${t('table_radiator_temp')}</th>
       <th>${t('table_dominant_weather')}</th>
     </tr>`;
     tbody.innerHTML = a.data.map(r => `
@@ -773,7 +828,8 @@ function renderTable(a, b) {
         <td class="text-nowrap small">${formatPeriodLabel(r.period_start, group)}</td>
         <td>${parseFloat(r.energy_kwh) || '—'}</td>
         <td>${r.peak_power_w ? parseInt(r.peak_power_w).toLocaleString() : '—'}</td>
-        <td>${r.avg_temp !== null && r.avg_temp !== '' ? r.avg_temp : '—'}</td>
+        <td>${r.avg_temp !== null && r.avg_temp !== '' ? r.avg_temp + '°C' : '—'}</td>
+        <td>${r.avg_radiator_temp !== null && r.avg_radiator_temp !== '' ? r.avg_radiator_temp + '°C' : '—'}</td>
         <td class="small">${r.dominant_condition ? conditionEmoji(r.dominant_condition)+' '+r.dominant_condition : '—'}</td>
       </tr>`).join('');
   }

@@ -1,13 +1,18 @@
 FROM ubuntu:latest
 
 # Install cron
-RUN apt-get update && apt-get install -y cron curl iputils-ping
+RUN apt-get update && apt-get install -y cron curl iputils-ping postgresql-client
 
 # Create the log file to be able to run tail
 RUN touch /var/log/cron.log
 
-# Setup cron job
+# Copy backup script
+COPY backup.sh /usr/local/bin/backup.sh
+RUN chmod +x /usr/local/bin/backup.sh
+
+# Setup cron jobs
 RUN (crontab -l ; echo "*/5 * * * * curl -s http://deye_php/crontasks.php >> /var/log/cron.log") | crontab
+RUN (crontab -l ; echo "0 2 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
 
 # Run the command on container startup
 CMD cron && tail -f /var/log/cron.log

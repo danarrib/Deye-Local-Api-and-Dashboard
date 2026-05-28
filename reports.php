@@ -109,7 +109,8 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                     device_sn,
                     (created_at AT TIME ZONE \$1)::timestamp AS local_ts,
                     energy_today,
-                    power_now
+                    power_now,
+                    radiator_temp
                 FROM pvstatsdetail
                 WHERE created_at >= \$2 AND created_at < \$3{$inv_clause}
             ) _raw
@@ -168,16 +169,26 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                 FROM weather_info
                 WHERE created_at >= \$2 AND created_at < \$3
                 GROUP BY period_start
+            ),
+            period_radiator AS (
+                SELECT
+                    LPAD(EXTRACT(hour FROM local_ts)::int::text, 2, '0') || ':00' AS period_start,
+                    ROUND(AVG(radiator_temp))::int AS avg_radiator_temp
+                FROM local_stats
+                WHERE radiator_temp IS NOT NULL
+                GROUP BY EXTRACT(hour FROM local_ts)::int
             )
             SELECT
                 pe.period_start,
                 pe.energy_kwh,
                 pp.peak_power_w,
                 pw.avg_temp,
-                pw.dominant_condition
+                pw.dominant_condition,
+                pr.avg_radiator_temp
             FROM period_energy pe
             LEFT JOIN period_peak pp ON pe.period_start = pp.period_start
             LEFT JOIN period_weather pw ON pe.period_start = pw.period_start
+            LEFT JOIN period_radiator pr ON pe.period_start = pr.period_start
             ORDER BY pe.period_start
         ";
     } elseif ($group === 'halfday') {
@@ -223,16 +234,26 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                 FROM weather_info
                 WHERE created_at >= \$2 AND created_at < \$3
                 GROUP BY period_start
+            ),
+            period_radiator AS (
+                SELECT
+                    CASE WHEN EXTRACT(hour FROM local_ts) < 12 THEN 'morning' ELSE 'afternoon' END AS period_start,
+                    ROUND(AVG(radiator_temp))::int AS avg_radiator_temp
+                FROM local_stats
+                WHERE radiator_temp IS NOT NULL
+                GROUP BY period_start
             )
             SELECT
                 pe.period_start,
                 pe.energy_kwh,
                 pp.peak_power_w,
                 pw.avg_temp,
-                pw.dominant_condition
+                pw.dominant_condition,
+                pr.avg_radiator_temp
             FROM period_energy pe
             LEFT JOIN period_peak pp ON pe.period_start = pp.period_start
             LEFT JOIN period_weather pw ON pe.period_start = pw.period_start
+            LEFT JOIN period_radiator pr ON pe.period_start = pr.period_start
             ORDER BY CASE pe.period_start WHEN 'morning' THEN 1 ELSE 2 END
         ";
     } else {
@@ -284,16 +305,26 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                 FROM weather_info
                 WHERE created_at >= \$2 AND created_at < \$3
                 GROUP BY period_start
+            ),
+            period_radiator AS (
+                SELECT
+                    DATE_TRUNC('{$period_trunc}', local_ts)::{$period_cast} AS period_start,
+                    ROUND(AVG(radiator_temp))::int AS avg_radiator_temp
+                FROM local_stats
+                WHERE radiator_temp IS NOT NULL
+                GROUP BY period_start
             )
             SELECT
                 pe.period_start,
                 pe.energy_kwh,
                 pp.peak_power_w,
                 pw.avg_temp,
-                pw.dominant_condition
+                pw.dominant_condition,
+                pr.avg_radiator_temp
             FROM period_energy pe
             LEFT JOIN period_peak pp ON pe.period_start = pp.period_start
             LEFT JOIN period_weather pw ON pe.period_start = pw.period_start
+            LEFT JOIN period_radiator pr ON pe.period_start = pr.period_start
             ORDER BY pe.period_start
         ";
     }
@@ -302,11 +333,13 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
     $rows = pg_fetch_all($res) ?: [];
 
     // Summary stats
-    $total_energy     = 0.0;
-    $peak_power       = 0.0;
-    $temp_sum         = 0;
-    $temp_count       = 0;
-    $condition_counts = [];
+    $total_energy        = 0.0;
+    $peak_power          = 0.0;
+    $temp_sum            = 0;
+    $temp_count          = 0;
+    $radiator_temp_sum   = 0;
+    $radiator_temp_count = 0;
+    $condition_counts    = [];
 
     foreach ($rows as $row) {
         $total_energy += (float)$row['energy_kwh'];
@@ -316,6 +349,10 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
         if ($row['avg_temp'] !== null) {
             $temp_sum += (int)$row['avg_temp'];
             $temp_count++;
+        }
+        if ($row['avg_radiator_temp'] !== null && $row['avg_radiator_temp'] !== '') {
+            $radiator_temp_sum += (int)$row['avg_radiator_temp'];
+            $radiator_temp_count++;
         }
         if ($row['dominant_condition']) {
             $c = $row['dominant_condition'];
@@ -339,6 +376,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
             'daily_avg_kwh'      => $day_count > 0 ? round($total_energy / $day_count, 2) : 0,
             'peak_power_w'       => (int)$peak_power,
             'avg_temp'           => $temp_count > 0 ? (int)round($temp_sum / $temp_count) : null,
+            'avg_radiator_temp'  => $radiator_temp_count > 0 ? (int)round($radiator_temp_sum / $radiator_temp_count) : null,
             'dominant_condition' => $dominant ?: null,
         ],
         'data' => $rows,

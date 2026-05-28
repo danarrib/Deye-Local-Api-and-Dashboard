@@ -97,15 +97,23 @@
         <p></p>
       </div>
 
-      <div class="row my-3 align-items-center justify-content-center">
+      <div class="row my-3 align-items-center justify-content-center g-2">
         <div class="col-auto">
-          <button id="btn-prev-day" class="btn btn-outline-secondary btn-sm" data-i18n="btn_prev">‹ Prev</button>
+          <div class="btn-group btn-group-sm">
+            <button id="btn-prev-month" class="btn btn-outline-secondary" data-i18n="btn_prev_month">‹ Month</button>
+            <button id="btn-prev-week"  class="btn btn-outline-secondary" data-i18n="btn_prev_week">‹ Week</button>
+            <button id="btn-prev-day"   class="btn btn-outline-secondary" data-i18n="btn_prev_day">‹ Day</button>
+          </div>
         </div>
         <div class="col-auto">
           <input type="date" id="nav-date" class="form-control form-control-sm" style="width: auto">
         </div>
         <div class="col-auto">
-          <button id="btn-next-day" class="btn btn-outline-secondary btn-sm" disabled data-i18n="btn_next">Next ›</button>
+          <div class="btn-group btn-group-sm">
+            <button id="btn-next-day"   class="btn btn-outline-secondary" disabled data-i18n="btn_next_day">Day ›</button>
+            <button id="btn-next-week"  class="btn btn-outline-secondary" disabled data-i18n="btn_next_week">Week ›</button>
+            <button id="btn-next-month" class="btn btn-outline-secondary" disabled data-i18n="btn_next_month">Month ›</button>
+          </div>
         </div>
         <div class="col-auto" id="live-badge-wrapper" style="display:none">
           <button id="btn-live" class="btn btn-success btn-sm" data-i18n="btn_live">● Live</button>
@@ -148,6 +156,7 @@
 
       let selectedDate = null; // null = live/today; 'YYYY-MM-DD' = historical
       let lastReferenceDate = null; // date string of the last loaded reference_date
+      let minDate = null; // earliest date with data, 'YYYY-MM-DD'
 
       function getApiData() {
         let url = selectedDate ? `overall.php?date=${selectedDate}` : 'overall.php';
@@ -200,9 +209,10 @@
 
             // Update date navigation
             lastReferenceDate = data.reference_date.replace(/\s/g, '').split('T')[0];
+            if (data.min_date) minDate = data.min_date;
             document.getElementById('nav-date').value = lastReferenceDate;
-            document.getElementById('btn-next-day').disabled = !data.is_historical;
             document.getElementById('live-badge-wrapper').style.display = data.is_historical ? '' : 'none';
+            updateNavButtons();
 
             updateChart(data.detailed_powerplant_data, data.weather_changes);
             colorIndex = 0;
@@ -217,36 +227,63 @@
         document.getElementById('nav-date').max = todayStr;
       })();
 
+      function todayStr() {
+        let now = new Date();
+        return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+      }
+
+      function navigateDays(delta) {
+        let base = new Date((lastReferenceDate || todayStr()) + 'T12:00:00');
+        base.setDate(base.getDate() + delta);
+        let today = new Date(); today.setHours(0, 0, 0, 0);
+        selectedDate = base >= today ? null : base.toISOString().split('T')[0];
+        getApiData();
+      }
+
+      function updateNavButtons() {
+        let current = lastReferenceDate || todayStr();
+        let today   = todayStr();
+        let isLive  = (current >= today);
+
+        // Prev buttons: disabled if target would be before minDate (or no data at all)
+        let canPrevDay   = !minDate || current > minDate;
+        let canPrevWeek  = !minDate || addDays(current, -7) >= minDate;
+        let canPrevMonth = !minDate || addDays(current, -30) >= minDate;
+
+        document.getElementById('btn-prev-day').disabled   = !canPrevDay;
+        document.getElementById('btn-prev-week').disabled  = !canPrevWeek;
+        document.getElementById('btn-prev-month').disabled = !canPrevMonth;
+
+        // Next buttons: disabled when navigating would land on or past today
+        document.getElementById('btn-next-day').disabled   = isLive;
+        document.getElementById('btn-next-week').disabled  = addDays(current, 7) >= today;
+        document.getElementById('btn-next-month').disabled = addDays(current, 30) >= today;
+
+        // Keep the date picker min in sync
+        if (minDate) document.getElementById('nav-date').min = minDate;
+      }
+
+      function addDays(dateStr, days) {
+        let d = new Date(dateStr + 'T12:00:00');
+        d.setDate(d.getDate() + days);
+        return d.toISOString().split('T')[0];
+      }
+
       document.getElementById('nav-date').addEventListener('change', function() {
-        let picked = this.value; // YYYY-MM-DD
+        let picked = this.value;
         if (!picked) return;
-        let today = new Date();
-        today.setHours(0, 0, 0, 0);
+        let today = new Date(); today.setHours(0, 0, 0, 0);
         let pickedDate = new Date(picked + 'T12:00:00');
         selectedDate = pickedDate >= today ? null : picked;
         getApiData();
       });
 
-      document.getElementById('btn-prev-day').addEventListener('click', function() {
-        let base = new Date((lastReferenceDate || new Date().toISOString().split('T')[0]) + 'T12:00:00');
-        base.setDate(base.getDate() - 1);
-        selectedDate = base.toISOString().split('T')[0];
-        getApiData();
-      });
-
-      document.getElementById('btn-next-day').addEventListener('click', function() {
-        if (!selectedDate) return;
-        let base = new Date(selectedDate + 'T12:00:00');
-        base.setDate(base.getDate() + 1);
-        let today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (base >= today) {
-          selectedDate = null;
-        } else {
-          selectedDate = base.toISOString().split('T')[0];
-        }
-        getApiData();
-      });
+      document.getElementById('btn-prev-day').addEventListener('click',   () => navigateDays(-1));
+      document.getElementById('btn-prev-week').addEventListener('click',  () => navigateDays(-7));
+      document.getElementById('btn-prev-month').addEventListener('click', () => navigateDays(-30));
+      document.getElementById('btn-next-day').addEventListener('click',   () => navigateDays(1));
+      document.getElementById('btn-next-week').addEventListener('click',  () => navigateDays(7));
+      document.getElementById('btn-next-month').addEventListener('click', () => navigateDays(30));
 
       document.getElementById('btn-live').addEventListener('click', function() {
         selectedDate = null;
@@ -395,34 +432,50 @@
 
       function updateChart(data, weatherChanges) {
         let ctx = document.getElementById('myChart');
-        let chartStatus = Chart.getChart('myChart'); // <canvas> id
-        if (chartStatus != undefined) {
-          chartStatus.destroy();
-        }
+        let chartStatus = Chart.getChart('myChart');
+        if (chartStatus != undefined) { chartStatus.destroy(); }
 
         let rawTimes = data.map(d => d.time);
         let labels = rawTimes.map(t => {
           return new Date(t).toLocaleTimeString(navigator.language, {
-            hour: '2-digit',
-            minute: '2-digit'
+            hour: '2-digit', minute: '2-digit'
           });
         });
 
         let values = data.map(d => d.total_power_now);
+        let radiatorValues = data.map(d =>
+          d.avg_radiator_temp !== null && d.avg_radiator_temp !== '' ? parseFloat(d.avg_radiator_temp) : null
+        );
+        const hasRadiator = radiatorValues.some(v => v !== null);
+
+        const datasets = [{
+          label: t('chart_total_power'),
+          fill: true,
+          data: values,
+          borderWidth: 1,
+          tension: 0.5,
+          yAxisID: 'y',
+        }];
+
+        if (hasRadiator) {
+          datasets.push({
+            label: t('chart_radiator_temp'),
+            data: radiatorValues,
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            borderWidth: 1.5,
+            tension: 0.5,
+            fill: false,
+            spanGaps: true,
+            pointRadius: 2,
+            yAxisID: 'y2',
+          });
+        }
 
         new Chart(ctx, {
           type: 'line',
           plugins: [weatherAnnotationsPlugin],
-          data: {
-            labels: labels,
-            datasets: [{
-              label: t('chart_total_power'),
-              fill: true,
-              data: values,
-              borderWidth: 1,
-              tension: 0.5
-            }]
-          },
+          data: { labels, datasets },
           options: {
             plugins: {
               weatherAnnotations: {
@@ -431,9 +484,14 @@
               }
             },
             scales: {
-              y: {
-                beginAtZero: true
-              }
+              y: { beginAtZero: true },
+              ...(hasRadiator ? {
+                y2: {
+                  position: 'right',
+                  grid: { drawOnChartArea: false },
+                  title: { display: true, text: '°C' },
+                }
+              } : {})
             }
           }
         });

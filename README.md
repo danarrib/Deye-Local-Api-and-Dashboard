@@ -33,14 +33,25 @@ This is what is already working:
 
 ## How to set up
 
-### Option 1: Docker Compose (Recommended)
+### Requirements
 
-1. Get a Linux machine running on the local network
-2. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-3. Clone this repository and enter the directory
-4. Run `docker compose up -d`
-5. Open `http://localhost:8080/admin/` in your browser
-6. The setup wizard will guide you through:
+- A Linux machine running on the local network (a Raspberry Pi or any always-on server works great)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- [Git](https://git-scm.com/downloads)
+
+### Installation
+
+1. Clone the repository and enter the directory:
+   ```bash
+   git clone https://github.com/danarrib/Deye-Local-Api-and-Dashboard.git
+   cd Deye-Local-Api-and-Dashboard
+   ```
+2. Start the stack:
+   ```bash
+   docker compose up -d
+   ```
+3. Open `http://localhost:8080/admin/` in your browser
+4. The setup wizard will guide you through:
    - Creating an admin account
    - Configuring your power plant settings (name, timezone, location)
    - Adding your inverters (IP address, credentials)
@@ -48,28 +59,56 @@ This is what is already working:
 
 The database is automatically configured via environment variables in `docker-compose.yml`. Data collection runs every 5 minutes via the built-in cron service.
 
-### Option 2: Manual Installation
+## Updating
 
-1. Get a Linux machine running on the local network
-2. Install PostgreSQL, Apache, PHP (with `php-pgsql` and `php-curl` extensions)
-3. Set up a new user and a new database on PostgreSQL
-4. Create a new directory called `deye_api` inside an Apache exposed directory (usually `/var/www/html/`)
-5. Copy all the files of this repository to that directory
-6. Open `http://localhost/deye_api/admin/` in your browser
-7. The setup wizard will guide you through database connection, admin account creation, and all other settings
-8. Add a cron job to run the `crontasks.php` file every 5 minutes (run `crontab -e` and add `*/5 * * * * php /var/www/html/deye_api/crontasks.php`)
+To update to the latest version, pull the new code and rebuild the stack:
+
+```bash
+git pull origin master
+bash rebuild.sh
+```
+
+Your data will not be erased — the database volume is preserved across rebuilds. Any schema changes required by the new version are applied automatically on startup.
+
+## Backup & Restore
+
+### Automatic backups
+
+The cron service automatically backs up the database every day at 2 AM. Backups are stored as compressed files in the `backups/` directory on the host:
+
+```
+backups/deye_backup_YYYYMMDD_HHMMSS.sql.gz
+```
+
+Files older than 7 days are deleted automatically, so the directory always holds at most one week of daily backups.
+
+### Restoring a backup
+
+Use the included `restore.sh` script. It will stop the app, wipe the current database, restore the chosen backup, and bring everything back up.
+
+Restore the latest backup:
+```bash
+bash restore.sh
+```
+
+Restore a specific backup file:
+```bash
+bash restore.sh backups/deye_backup_20260528_020000.sql.gz
+```
+
+The script will ask for confirmation before making any changes.
 
 ## How to use
 
 There are three ways to use: the Dashboard, the Reports page, and the API:
 
 ### Dashboard
-Open an Internet Browser and open `http://localhost/deye_api/`
+Open an Internet Browser and open `http://localhost:8080/`
 
 <img alt="Dashboard screenshot" src="docs/dashboard.png" />
 
 ### Reports
-Open `http://localhost/deye_api/reports.html` for the report builder.
+Open `http://localhost:8080/reports.html` for the report builder.
 
 The reports page lets you analyse historical production data with flexible grouping and comparison:
 
@@ -83,7 +122,7 @@ The reports page lets you analyse historical production data with flexible group
 <img alt="Reports screenshot" src="docs/reports.png" />
 
 ### API
-Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
+Open an Internet Browser and open `http://localhost:8080/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
 
 Replace on the above URL the parameters with your inverter specific details.
 

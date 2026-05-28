@@ -32,6 +32,12 @@ services:
       dockerfile: Dockerfile_cron
     depends_on:
       - deye_php
+    environment:
+      - PGUSER=deye_db_user
+      - PGPASSWORD=deye_db_pass_1234
+      - PGDATABASE=deye_data
+    volumes:
+      - ./backups:/backups
     restart: always
 
 volumes:

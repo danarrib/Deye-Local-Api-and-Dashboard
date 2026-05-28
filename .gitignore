@@ -5,3 +5,7 @@ config.php
 scripts/node_modules/
 rebuild.sh
 phpinfo.php
+backups/*.sql.gz
+backups-test/*.sql.gz
+docker-compose.test.yml
+rebuild-test.sh

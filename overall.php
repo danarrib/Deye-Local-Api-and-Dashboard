@@ -99,8 +99,11 @@
         $latest_weather_data = fetchLatestWeatherData();
     }
 
+    $min_date = get_min_date();
+
     $json = array(
         "powerplant_name" => $powerplant_name,
+        "min_date" => $min_date,
         "powerplant_timezone" => $powerplant_timezone,
         "total_power_now" => $total_power_now,
         "total_energy_today" => $total_energy_today,
