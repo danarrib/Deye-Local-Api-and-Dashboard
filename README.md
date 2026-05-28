@@ -59,12 +59,24 @@ The database is automatically configured via environment variables in `docker-co
 
 ## How to use
 
-There are two ways to use: The API and the Dashboard:
+There are three ways to use: the Dashboard, the Reports page, and the API:
 
 ### Dashboard
 Open an Internet Browser and open `http://localhost/deye_api/`
 
 <img alt="Dashboard screenshot" src="docs/dashboard.png" />
+
+### Reports
+Open `http://localhost/deye_api/reports.html` for the report builder.
+
+The reports page lets you analyse historical production data with flexible grouping and comparison:
+
+- **Two date ranges (A and B):** run a single range for totals, or add a second range to compare periods side-by-side (e.g. this month vs last month, or this summer vs last summer)
+- **Per-range time-of-day filter:** narrow each range to a specific window (e.g. Range A = 08:00–12:00, Range B = 12:00–18:00) to compare morning and afternoon production
+- **Group by:** Hour (aggregated by hour-of-day across the range), Morning and Afternoon (two buckets: before/after noon), Day, Week, or Month
+- **Chart types:** Bars, Lines, or Doughnut
+- **Inverter selection:** when multiple inverters are configured, choose which ones to include per range
+- **Summary cards:** total energy, daily average, peak power, average temperature, and dominant weather condition — with percentage deltas when comparing two ranges
 
 ### API
 Open an Internet Browser and open `http://localhost/deye_api/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
@@ -130,8 +142,11 @@ Here's a list of new features I wish to add to this project in the future:
 - [x] Make it work as a Docker compose package, to make set up easier for everyone
 - [x] Support Dark mode
 - [x] Allow user to navigate to previous dates on the dashboard (currently only shows current day)
-- [ ] Report builder
-  - [ ] Filter by arbitrary date ranges
-  - [ ] Group/aggregate by time of day, day, week, month
-  - [ ] Cross-reference production data with weather data
-  - [ ] Summary statistics (totals, averages, peaks)
+- [x] Report builder
+  - [x] Filter by arbitrary date ranges
+  - [x] Group/aggregate by hour-of-day, morning/afternoon, day, week, month
+  - [x] Cross-reference production data with weather data
+  - [x] Summary statistics (totals, averages, peaks)
+  - [x] Compare two date ranges side-by-side with delta indicators
+  - [x] Per-range time-of-day filters and inverter selection
+  - [x] Multiple chart types: bars, lines, doughnut

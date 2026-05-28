@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports - Deye Solar</title>
+  <link rel="icon" type="image/x-icon" href="img/favicon.png">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <style>
+    .stat-card { border-left: 4px solid; }
+    .stat-card.range-a { border-color: rgb(54, 162, 235); }
+    .stat-card.range-b { border-color: rgb(255, 159, 64); }
+    .stat-card.single  { border-color: rgb(75, 192, 192); }
+    .delta-positive { color: #198754; }
+    .delta-negative { color: #dc3545; }
+    .delta-neutral  { color: #6c757d; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary mb-4">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">&#9730; Deye Solar</a>
+    <span class="navbar-text">Reports</span>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- Filters -->
+  <div class="card mb-4">
+    <div class="card-body">
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <h6 class="mb-2">Range A</h6>
+          <div class="mb-2">
+            <select class="form-select form-select-sm" id="preset-a" onchange="onPresetChange('a')">
+              <option value="">— Custom range —</option>
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col">
+              <label class="form-label mb-1 small">From</label>
+              <input type="date" class="form-control form-control-sm" id="a-from" onchange="clearPreset('a')">
+            </div>
+            <div class="col">
+              <label class="form-label mb-1 small">To</label>
+              <input type="date" class="form-control form-control-sm" id="a-to" onchange="clearPreset('a')">
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col">
+              <label class="form-label mb-1 small">Time from</label>
+              <input type="time" class="form-control form-control-sm" id="a-time-from" value="00:00">
+            </div>
+            <div class="col">
+              <label class="form-label mb-1 small">Time to</label>
+              <input type="time" class="form-control form-control-sm" id="a-time-to" value="23:59">
+            </div>
+          </div>
+          <div id="inverters-a" class="mt-2"></div>
+        </div>
+
+        <div class="col-md-6">
+          <h6 class="mb-2">Range B <span class="text-muted fw-normal small">(optional comparison)</span></h6>
+          <div class="mb-2">
+            <select class="form-select form-select-sm" id="preset-b" onchange="onPresetChange('b')">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div class="row g-2" id="range-b-dates">
+            <div class="col">
+              <label class="form-label mb-1 small">From</label>
+              <input type="date" class="form-control form-control-sm" id="b-from" onchange="clearPreset('b')">
+            </div>
+            <div class="col">
+              <label class="form-label mb-1 small">To</label>
+              <input type="date" class="form-control form-control-sm" id="b-to" onchange="clearPreset('b')">
+            </div>
+          </div>
+          <div class="row g-2 mt-1">
+            <div class="col">
+              <label class="form-label mb-1 small">Time from</label>
+              <input type="time" class="form-control form-control-sm" id="b-time-from" value="00:00">
+            </div>
+            <div class="col">
+              <label class="form-label mb-1 small">Time to</label>
+              <input type="time" class="form-control form-control-sm" id="b-time-to" value="23:59">
+            </div>
+          </div>
+          <div id="inverters-b" class="mt-2"></div>
+        </div>
+      </div>
+
+      <div class="row g-2 align-items-end">
+        <div class="col-auto">
+          <label class="form-label mb-1 small">Group by</label>
+          <select class="form-select form-select-sm" id="group-by" style="width:auto">
+            <option value="hour">Hour</option>
+            <option value="halfday">Morning and Afternoon</option>
+            <option value="day" selected>Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <label class="form-label mb-1 small">Chart type</label>
+          <select class="form-select form-select-sm" id="chart-type" style="width:auto">
+            <option value="bar">Bars</option>
+            <option value="line">Lines</option>
+            <option value="doughnut">Doughnut</option>
+          </select>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary btn-sm" onclick="runReport()" id="btn-run">Run Report</button>
+        </div>
+        <div class="col-auto" id="loading-indicator" style="display:none">
+          <span class="text-muted small">Loading…</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div id="alert-area"></div>
+
+  <!-- Summary cards -->
+  <div id="summary-section" style="display:none">
+    <div class="row g-3 mb-4" id="summary-cards"></div>
+  </div>
+
+  <!-- Chart -->
+  <div id="chart-section" style="display:none" class="mb-4">
+    <canvas id="report-chart" style="max-height:400px"></canvas>
+  </div>
+
+  <!-- Table -->
+  <div id="table-section" style="display:none" class="mb-5">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle" id="report-table">
+        <thead class="table-dark" id="report-thead"></thead>
+        <tbody id="report-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let presets      = [];   // [{label, from, to, suggestB}]
+let allInverters = [];   // [{device_sn, friendly_name}]
+let reportChart  = null;
+let southern     = false;
+
+// Validated locale — navigator.language can be the string "undefined" in some
+// headless environments, which toLocaleDateString rejects as an invalid tag.
+const safeLocale = (() => {
+  try { new Intl.DateTimeFormat(navigator.language); return navigator.language; } catch(e) { return []; }
+})();
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+detectAndSetDarkMode();
+
+fetch('reports.php?action=config')
+  .then(r => r.json())
+  .then(cfg => {
+    southern     = (parseFloat(cfg.latitude) < 0);
+    allInverters = cfg.inverters || [];
+    presets      = buildPresets(southern);
+    populatePresetDropdowns();
+    renderInverterCheckboxes('a', allInverters);
+    renderInverterCheckboxes('b', allInverters);
+    applyPreset('a', presets.find(p => p.value === 'last30'));
+  })
+  .catch(() => {
+    presets = buildPresets(false);
+    populatePresetDropdowns();
+    applyPreset('a', presets.find(p => p.value === 'last30'));
+  });
+
+// ─── Dark mode ───────────────────────────────────────────────────────────────
+
+function detectAndSetDarkMode() {
+  const html = document.documentElement;
+  const apply = () => {
+    html.setAttribute('data-bs-theme',
+      window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  };
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', apply);
+    apply();
+  } else {
+    html.setAttribute('data-bs-theme', 'light');
+  }
+}
+
+// ─── Preset builder ──────────────────────────────────────────────────────────
+
+function feb29(y) { return (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 29 : 28; }
+function pad(n)   { return String(n).padStart(2, '0'); }
+function ymd(y, m, d) { return `${y}-${pad(m)}-${pad(d)}`; }
+
+function getSeasonDates(year, name, isSouthern) {
+  if (!isSouthern) {
+    if (name === 'Spring') return { from: ymd(year,3,1),   to: ymd(year,5,31)          };
+    if (name === 'Summer') return { from: ymd(year,6,1),   to: ymd(year,8,31)          };
+    if (name === 'Autumn') return { from: ymd(year,9,1),   to: ymd(year,11,30)         };
+    if (name === 'Winter') return { from: ymd(year,12,1),  to: ymd(year+1,2,feb29(year+1)) };
+  } else {
+    if (name === 'Summer') return { from: ymd(year-1,12,1), to: ymd(year,2,feb29(year))  };
+    if (name === 'Autumn') return { from: ymd(year,3,1),    to: ymd(year,5,31)           };
+    if (name === 'Winter') return { from: ymd(year,6,1),    to: ymd(year,8,31)           };
+    if (name === 'Spring') return { from: ymd(year,9,1),    to: ymd(year,11,30)          };
+  }
+}
+
+function buildPresets(isSouthern) {
+  const today = new Date();
+  const Y = today.getFullYear();
+  const todayStr = ymd(Y, today.getMonth()+1, today.getDate());
+
+  function rolling(days) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - days + 1);
+    return { from: ymd(d.getFullYear(), d.getMonth()+1, d.getDate()), to: todayStr };
+  }
+
+  function thisMonth() { return { from: ymd(Y, today.getMonth()+1, 1), to: todayStr }; }
+  function lastMonth() {
+    const m = today.getMonth(); // 0-indexed prev month
+    const y = m === 0 ? Y-1 : Y;
+    const mo = m === 0 ? 12 : m;
+    const last = new Date(y, mo, 0).getDate();
+    return { from: ymd(y, mo, 1), to: ymd(y, mo, last) };
+  }
+  function monthBeforeLast() {
+    const d = new Date(Y, today.getMonth() - 2, 1); // JS handles month underflow
+    const y = d.getFullYear(), m = d.getMonth();
+    const last = new Date(y, m + 1, 0).getDate();
+    return { from: ymd(y, m+1, 1), to: ymd(y, m+1, last) };
+  }
+  function thisYearYTD()  { return { from: ymd(Y,1,1),   to: todayStr }; }
+  function lastYearYTD()  { return { from: ymd(Y-1,1,1), to: ymd(Y-1, today.getMonth()+1, today.getDate()) }; }
+  function lastFullYear() { return { from: ymd(Y-1,1,1), to: ymd(Y-1,12,31) }; }
+
+  function quarter(y, q) {
+    const starts = [[1,1],[4,1],[7,1],[10,1]];
+    const ends   = [[3,31],[6,30],[9,30],[12,31]];
+    return { from: ymd(y,...starts[q-1]), to: ymd(y,...ends[q-1]) };
+  }
+
+  // Season order within each year, most recent first
+  const seasonOrder = isSouthern
+    ? ['Spring','Winter','Autumn','Summer']   // Sep, Jun, Mar, Dec(prev year)
+    : ['Winter','Autumn','Summer','Spring'];  // Dec, Sep, Jun, Mar
+
+  const list = [];
+
+  // Rolling
+  list.push({ label:'Last 7 days',    value:'last7',   suggestB:'last7_prev',   ...rolling(7)   });
+  list.push({ label:'Last 30 days',   value:'last30',  suggestB:'last30_prev',  ...rolling(30)  });
+  list.push({ label:'Last 90 days',   value:'last90',  suggestB:'last90_prev',  ...rolling(90)  });
+  list.push({ label:'Last 12 months', value:'last365', suggestB:'last365_prev', ...rolling(365) });
+
+  // Rolling companions (hidden — used only as suggestB targets)
+  list.push({ label:'Last 7 days (prev year)',    value:'last7_prev',   hidden:true, ...shiftYearBack(rolling(7))   });
+  list.push({ label:'Last 30 days (prev year)',   value:'last30_prev',  hidden:true, ...shiftYearBack(rolling(30))  });
+  list.push({ label:'Last 90 days (prev year)',   value:'last90_prev',  hidden:true, ...shiftYearBack(rolling(90))  });
+  list.push({ label:'Last 12 months (prev year)', value:'last365_prev', hidden:true, ...shiftYearBack(rolling(365)) });
+
+  // Calendar
+  list.push({ label:'This month',           value:'thismonth',       ...thisMonth()       });
+  list.push({ label:'Last month',           value:'lastmonth',       ...lastMonth()       });
+  list.push({ label:'Month before last',    value:'monthbeforelast', ...monthBeforeLast() });
+  list.push({ label:'This year (YTD)',      value:'thisyearytd',     ...thisYearYTD()     });
+  list.push({ label:'Last year to date',    value:'lytd',            ...lastYearYTD()     });
+  list.push({ label:'Last full year',       value:'lastfullyear',    ...lastFullYear()    });
+
+  // Quarters: year DESC, q DESC within year — clean ordering with no inline companions
+  for (let y = Y; y >= Y-2; y--) {
+    for (let q = 4; q >= 1; q--) {
+      const d = quarter(y, q);
+      if (d.from > todayStr) continue;
+      list.push({ label:`Q${q} ${y}`, value:`q${q}_${y}`, suggestB:`q${q}_${y-1}`, ...d });
+    }
+  }
+  // Hidden companions for the oldest visible year's suggestB targets
+  for (let q = 4; q >= 1; q--) {
+    const val = `q${q}_${Y-3}`;
+    if (!list.find(p => p.value === val)) {
+      list.push({ label:`Q${q} ${Y-3}`, value:val, hidden:true, ...quarter(Y-3, q) });
+    }
+  }
+
+  // Seasons: year DESC, season order (most recent first) within year
+  for (let y = Y; y >= Y-2; y--) {
+    for (const name of seasonOrder) {
+      const d = getSeasonDates(y, name, isSouthern);
+      if (!d || d.from > todayStr) continue;
+      const val = `${name.toLowerCase()}_${y}`;
+      if (!list.find(p => p.value === val)) {
+        list.push({ label:`${name} ${y}`, value:val, suggestB:`${name.toLowerCase()}_${y-1}`, ...d });
+      }
+    }
+  }
+  // Hidden companions for the oldest visible year's suggestB targets
+  for (const name of seasonOrder) {
+    const val = `${name.toLowerCase()}_${Y-3}`;
+    if (!list.find(p => p.value === val)) {
+      const d = getSeasonDates(Y-3, name, isSouthern);
+      if (d) list.push({ label:`${name} ${Y-3}`, value:val, hidden:true, ...d });
+    }
+  }
+
+  return list;
+}
+
+function shiftYearBack(range) {
+  const shiftDate = s => {
+    const d = new Date(s + 'T12:00:00');
+    d.setFullYear(d.getFullYear() - 1);
+    return ymd(d.getFullYear(), d.getMonth()+1, d.getDate());
+  };
+  return { from: shiftDate(range.from), to: shiftDate(range.to) };
+}
+
+// ─── Preset dropdowns ────────────────────────────────────────────────────────
+
+// Presets visible in the dropdown (exclude hidden companion presets)
+function visiblePresets() {
+  return presets.filter(p => !p.hidden);
+}
+
+function populatePresetDropdowns() {
+  const visible = visiblePresets();
+
+  // Groups for optgroup
+  const groups = [
+    { label: 'Rolling',   values: ['last7','last30','last90','last365'] },
+    { label: 'Calendar',  values: ['thismonth','lastmonth','monthbeforelast','thisyearytd','lytd','lastfullyear'] },
+    { label: 'Quarters',  fn: p => p.value.startsWith('q') },
+    { label: 'Seasons',   fn: p => ['spring','summer','autumn','winter'].some(s => p.value.startsWith(s)) },
+  ];
+
+  function buildOptions(selectId, includeNone) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = includeNone ? '<option value="">— None —</option>' : '<option value="">— Custom range —</option>';
+
+    for (const g of groups) {
+      const members = g.values
+        ? visible.filter(p => g.values.includes(p.value))
+        : visible.filter(g.fn);
+      if (!members.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = g.label;
+      members.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.value;
+        opt.textContent = p.label;
+        og.appendChild(opt);
+      });
+      sel.appendChild(og);
+    }
+  }
+
+  buildOptions('preset-a', false);
+  buildOptions('preset-b', true);
+}
+
+function applyPreset(side, preset) {
+  if (!preset) return;
+  document.getElementById(`${side}-from`).value = preset.from;
+  document.getElementById(`${side}-to`).value   = preset.to;
+  const sel = document.getElementById(`preset-${side}`);
+  if (sel) sel.value = preset.value || '';
+}
+
+function clearPreset(side) {
+  const sel = document.getElementById(`preset-${side}`);
+  if (sel) sel.value = '';
+}
+
+function onPresetChange(side) {
+  const val = document.getElementById(`preset-${side}`).value;
+  if (!val) {
+    if (side === 'b') {
+      document.getElementById('b-from').value = '';
+      document.getElementById('b-to').value   = '';
+    }
+    return;
+  }
+  const preset = presets.find(p => p.value === val);
+  if (preset) {
+    document.getElementById(`${side}-from`).value = preset.from;
+    document.getElementById(`${side}-to`).value   = preset.to;
+  }
+  if (side === 'a') autoSuggestB();
+}
+
+function autoSuggestB() {
+  const aVal = document.getElementById('preset-a').value;
+  const bSel = document.getElementById('preset-b');
+
+  // Only auto-suggest if B is still empty / unset
+  if (bSel.value) return;
+
+  const aPreset = presets.find(p => p.value === aVal);
+  if (!aPreset || !aPreset.suggestB) return;
+
+  const suggested = presets.find(p => p.value === aPreset.suggestB);
+  if (!suggested) return;
+
+  // Ensure the suggested value exists in the select
+  let opt = bSel.querySelector(`option[value="${suggested.value}"]`);
+  if (!opt) {
+    // Add it (it's a companion preset not normally shown)
+    opt = document.createElement('option');
+    opt.value = suggested.value;
+    opt.textContent = suggested.label;
+    bSel.appendChild(opt);
+  }
+
+  bSel.value = suggested.value;
+  document.getElementById('b-from').value = suggested.from;
+  document.getElementById('b-to').value   = suggested.to;
+}
+
+// ─── Report execution ────────────────────────────────────────────────────────
+
+async function runReport() {
+  const aFrom     = document.getElementById('a-from').value;
+  const aTo       = document.getElementById('a-to').value;
+  const bFrom     = document.getElementById('b-from').value;
+  const bTo       = document.getElementById('b-to').value;
+  const group     = document.getElementById('group-by').value;
+  const aTimeFrom = document.getElementById('a-time-from').value || '00:00';
+  const aTimeTo   = document.getElementById('a-time-to').value   || '23:59';
+  const bTimeFrom = document.getElementById('b-time-from').value || '00:00';
+  const bTimeTo   = document.getElementById('b-time-to').value   || '23:59';
+
+  clearAlert();
+
+  if (!aFrom || !aTo) { showAlert('Please set a date range for Range A.'); return; }
+  if (aFrom > aTo)    { showAlert('Range A: "From" must be before "To".'); return; }
+  if ((bFrom || bTo) && !(bFrom && bTo)) { showAlert('Please fill both dates for Range B.'); return; }
+  if (bFrom && bTo && bFrom > bTo) { showAlert('Range B: "From" must be before "To".'); return; }
+  if (!hasSelectedInverters('a')) { showAlert('Select at least one inverter for Range A.'); return; }
+  if (bFrom && bTo && !hasSelectedInverters('b')) { showAlert('Select at least one inverter for Range B.'); return; }
+
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('loading-indicator').style.display = '';
+
+  let url = `reports.php?a_from=${aFrom}&a_to=${aTo}&group=${group}`
+          + `&a_time_from=${encodeURIComponent(aTimeFrom)}&a_time_to=${encodeURIComponent(aTimeTo)}`;
+
+  const aInv = getSelectedInverters('a');
+  if (aInv.length) url += `&a_inverters=${encodeURIComponent(aInv.join(','))}`;
+
+  if (bFrom && bTo) {
+    url += `&b_from=${bFrom}&b_to=${bTo}`
+         + `&b_time_from=${encodeURIComponent(bTimeFrom)}&b_time_to=${encodeURIComponent(bTimeTo)}`;
+    const bInv = getSelectedInverters('b');
+    if (bInv.length) url += `&b_inverters=${encodeURIComponent(bInv.join(','))}`;
+  }
+
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (!resp.ok) { showAlert(data.error || 'Server error.'); return; }
+    renderReport(data);
+  } catch(e) {
+    showAlert('Could not reach the server.');
+  } finally {
+    document.getElementById('btn-run').disabled = false;
+    document.getElementById('loading-indicator').style.display = 'none';
+  }
+}
+
+// ─── Rendering ───────────────────────────────────────────────────────────────
+
+function renderReport(data) {
+  const rangeA = data.range_a;
+  const rangeB = data.range_b || null;
+
+  renderSummary(rangeA, rangeB);
+  renderChart(rangeA, rangeB);
+  renderTable(rangeA, rangeB);
+
+  document.getElementById('summary-section').style.display = '';
+  document.getElementById('chart-section').style.display   = '';
+  document.getElementById('table-section').style.display   = '';
+}
+
+// — Summary cards —
+
+function renderSummary(a, b) {
+  const container = document.getElementById('summary-cards');
+  container.innerHTML = '';
+
+  const s = a.summary;
+  const t = b ? b.summary : null;
+
+  const cards = [
+    {
+      label:    'Total Energy',
+      valA:     `${s.total_energy_kwh} kWh`,
+      valB:     t ? `${t.total_energy_kwh} kWh` : null,
+      delta:    t ? pctDelta(s.total_energy_kwh, t.total_energy_kwh) : null,
+    },
+    {
+      label:    'Daily Average',
+      valA:     `${s.daily_avg_kwh} kWh`,
+      valB:     t ? `${t.daily_avg_kwh} kWh` : null,
+      delta:    t ? pctDelta(s.daily_avg_kwh, t.daily_avg_kwh) : null,
+    },
+    {
+      label:    'Peak Power',
+      valA:     s.peak_power_w ? `${s.peak_power_w.toLocaleString()} W` : '—',
+      valB:     t ? (t.peak_power_w ? `${t.peak_power_w.toLocaleString()} W` : '—') : null,
+      delta:    t ? pctDelta(s.peak_power_w, t.peak_power_w) : null,
+    },
+    {
+      label:    'Avg Temperature',
+      valA:     s.avg_temp !== null ? `${s.avg_temp}°C` : '—',
+      valB:     t ? (t.avg_temp !== null ? `${t.avg_temp}°C` : '—') : null,
+      delta:    t && s.avg_temp !== null && t.avg_temp !== null
+                  ? { text: `${s.avg_temp - t.avg_temp > 0 ? '+' : ''}${s.avg_temp - t.avg_temp}°C vs B`, cls: 'delta-neutral' }
+                  : null,
+    },
+    {
+      label:    'Dominant Weather',
+      valA:     conditionEmoji(s.dominant_condition) + ' ' + (s.dominant_condition || '—'),
+      valB:     t ? conditionEmoji(t.dominant_condition) + ' ' + (t.dominant_condition || '—') : null,
+      delta:    null,
+    },
+  ];
+
+  cards.forEach(card => {
+    const col = document.createElement('div');
+    col.className = b ? 'col-12 col-md-6 col-xl-4' : 'col-6 col-md-4 col-xl-2';
+
+    let inner = '';
+    if (b) {
+      inner = `
+        <div class="card stat-card h-100">
+          <div class="card-body py-2">
+            <div class="text-muted small mb-1">${card.label}</div>
+            <div class="d-flex gap-3 align-items-start flex-wrap">
+              <div>
+                <div class="badge bg-primary mb-1">A</div>
+                <div class="fw-bold">${card.valA}</div>
+              </div>
+              <div>
+                <div class="badge bg-warning text-dark mb-1">B</div>
+                <div class="fw-bold">${card.valB}</div>
+              </div>
+            </div>
+            ${card.delta ? `<div class="small mt-1 ${card.delta.cls}">${card.delta.text}</div>` : ''}
+          </div>
+        </div>`;
+    } else {
+      inner = `
+        <div class="card stat-card single h-100">
+          <div class="card-body py-2">
+            <div class="text-muted small mb-1">${card.label}</div>
+            <div class="fw-bold fs-5">${card.valA}</div>
+          </div>
+        </div>`;
+    }
+    col.innerHTML = inner;
+    container.appendChild(col);
+  });
+}
+
+function pctDelta(a, b) {
+  if (!b) return null;
+  const pct = Math.round(((a - b) / b) * 100);
+  const sign = pct >= 0 ? '+' : '';
+  const cls  = pct > 0 ? 'delta-positive' : pct < 0 ? 'delta-negative' : 'delta-neutral';
+  return { text: `${sign}${pct}% vs B`, cls };
+}
+
+// — Chart —
+
+function renderChart(a, b) {
+  const ctx = document.getElementById('report-chart');
+  if (reportChart) { reportChart.destroy(); reportChart = null; }
+
+  const group     = a.group;
+  const aData     = a.data;
+  const bData     = b ? b.data : null;
+  const chartType = document.getElementById('chart-type').value;
+
+  const groupLabel = { hour:'Hour', halfday:'Half-day', day:'Day', week:'Week', month:'Month' }[group] || 'Period';
+  const maxLen     = Math.max(aData.length, bData ? bData.length : 0);
+
+  // Relative labels ("Day 1", "Day 2"…) only make sense for date-based groups of equal length.
+  const useRelative = bData && bData.length === aData.length
+                   && !['hour','halfday'].includes(group);
+
+  const labels = Array.from({ length: maxLen }, (_, i) => {
+    if (useRelative) return `${groupLabel} ${i + 1}`;
+    const src = i < aData.length ? aData[i] : (bData ? bData[i] : null);
+    return src ? formatChartLabel(src.period_start, group) : `${groupLabel} ${i + 1}`;
+  });
+
+  const aValues = Array.from({ length: maxLen }, (_, i) =>
+    i < aData.length ? (parseFloat(aData[i].energy_kwh) || 0) : null
+  );
+
+  const aInvSuffix = getInverterLabel('a');
+  const bInvSuffix = b ? getInverterLabel('b') : '';
+
+  const isDoughnut = chartType === 'doughnut';
+  const isLine     = chartType === 'line';
+
+  // Doughnut slices get per-point colors; bar/line use a solid color per dataset.
+  const aColors = isDoughnut
+    ? aValues.map((_, i) => `hsla(${Math.round((i / Math.max(maxLen, 1)) * 360)}, 65%, 55%, 0.85)`)
+    : 'rgba(54, 162, 235, 0.7)';
+  const bColors = isDoughnut
+    ? aColors
+    : 'rgba(255, 159, 64, 0.7)';
+
+  const aDataset = {
+    label: b
+      ? `Range A (${a.from} → ${a.to})${aInvSuffix ? ': ' + aInvSuffix : ''}`
+      : `Energy (${a.from} → ${a.to})${aInvSuffix ? ' — ' + aInvSuffix : ''}`,
+    data:            aValues,
+    backgroundColor: aColors,
+    borderColor:     isLine ? 'rgb(54, 162, 235)' : 'rgb(54, 162, 235)',
+    borderWidth:     1,
+    ...(isLine ? { fill: false, tension: 0.3, pointRadius: 3 } : {}),
+  };
+
+  const datasets = [aDataset];
+
+  if (bData) {
+    const bValues = Array.from({ length: maxLen }, (_, i) =>
+      i < bData.length ? (parseFloat(bData[i].energy_kwh) || 0) : null
+    );
+    datasets.push({
+      label: `Range B (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`,
+      data:            bValues,
+      backgroundColor: bColors,
+      borderColor:     'rgb(255, 159, 64)',
+      borderWidth:     1,
+      ...(isLine ? { fill: false, tension: 0.3, pointRadius: 3 } : {}),
+    });
+  }
+
+  const tooltipAfterLabel = (ctx) => {
+    const src = ctx.datasetIndex === 0 ? aData : (bData || null);
+    const row = src ? src[ctx.dataIndex] : null;
+    if (!row) return '';
+    const lines = [];
+    if (row.period_start) lines.push(`Period: ${formatChartLabel(row.period_start, group)}`);
+    if (row.peak_power_w) lines.push(`Peak: ${parseInt(row.peak_power_w).toLocaleString()} W`);
+    if (row.avg_temp !== null && row.avg_temp !== '') lines.push(`Avg temp: ${row.avg_temp}°C`);
+    if (row.dominant_condition) lines.push(`Weather: ${conditionEmoji(row.dominant_condition)} ${row.dominant_condition}`);
+    return lines;
+  };
+
+  reportChart = new Chart(ctx, {
+    type: chartType,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: { afterLabel: tooltipAfterLabel }
+        }
+      },
+      ...(isDoughnut ? {} : {
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Energy (kWh)' }
+          }
+        }
+      }),
+    }
+  });
+}
+
+// — Table —
+
+function renderTable(a, b) {
+  const thead = document.getElementById('report-thead');
+  const tbody = document.getElementById('report-tbody');
+  const group = a.group;
+
+  if (b) {
+    thead.innerHTML = `<tr>
+      <th>Period</th>
+      <th class="text-primary">Energy A (kWh)</th>
+      <th class="text-warning">Energy B (kWh)</th>
+      <th>Δ Energy</th>
+      <th class="text-primary">Peak A (W)</th>
+      <th class="text-warning">Peak B (W)</th>
+      <th class="text-primary">Temp A (°C)</th>
+      <th class="text-warning">Temp B (°C)</th>
+      <th class="text-primary">Weather A</th>
+      <th class="text-warning">Weather B</th>
+    </tr>`;
+
+    const maxLen = Math.max(a.data.length, b.data.length);
+    tbody.innerHTML = '';
+    for (let i = 0; i < maxLen; i++) {
+      const ra = a.data[i];
+      const rb = b.data[i];
+      const ea = ra ? parseFloat(ra.energy_kwh) : null;
+      const eb = rb ? parseFloat(rb.energy_kwh) : null;
+      let delta = '—';
+      if (ea !== null && eb !== null && eb !== 0) {
+        const pct = Math.round(((ea - eb) / eb) * 100);
+        const cls = pct > 0 ? 'delta-positive' : pct < 0 ? 'delta-negative' : 'delta-neutral';
+        delta = `<span class="${cls}">${pct > 0 ? '+' : ''}${pct}%</span>`;
+      }
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-nowrap small">
+          ${ra ? `<span class="text-primary">${formatPeriodLabel(ra.period_start, group)}</span>` : '—'}<br>
+          ${rb ? `<span class="text-warning">${formatPeriodLabel(rb.period_start, group)}</span>` : '—'}
+        </td>
+        <td>${ea !== null ? ea : '—'}</td>
+        <td>${eb !== null ? eb : '—'}</td>
+        <td>${delta}</td>
+        <td>${ra && ra.peak_power_w ? parseInt(ra.peak_power_w).toLocaleString() : '—'}</td>
+        <td>${rb && rb.peak_power_w ? parseInt(rb.peak_power_w).toLocaleString() : '—'}</td>
+        <td>${ra && ra.avg_temp !== null && ra.avg_temp !== '' ? ra.avg_temp : '—'}</td>
+        <td>${rb && rb.avg_temp !== null && rb.avg_temp !== '' ? rb.avg_temp : '—'}</td>
+        <td class="small">${ra && ra.dominant_condition ? conditionEmoji(ra.dominant_condition)+' '+ra.dominant_condition : '—'}</td>
+        <td class="small">${rb && rb.dominant_condition ? conditionEmoji(rb.dominant_condition)+' '+rb.dominant_condition : '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  } else {
+    thead.innerHTML = `<tr>
+      <th>Period</th>
+      <th>Energy (kWh)</th>
+      <th>Peak Power (W)</th>
+      <th>Avg Temp (°C)</th>
+      <th>Dominant Weather</th>
+    </tr>`;
+    tbody.innerHTML = a.data.map(r => `
+      <tr>
+        <td class="text-nowrap small">${formatPeriodLabel(r.period_start, group)}</td>
+        <td>${parseFloat(r.energy_kwh) || '—'}</td>
+        <td>${r.peak_power_w ? parseInt(r.peak_power_w).toLocaleString() : '—'}</td>
+        <td>${r.avg_temp !== null && r.avg_temp !== '' ? r.avg_temp : '—'}</td>
+        <td class="small">${r.dominant_condition ? conditionEmoji(r.dominant_condition)+' '+r.dominant_condition : '—'}</td>
+      </tr>`).join('');
+  }
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatChartLabel(dateStr, group) {
+  if (!dateStr) return '—';
+  // halfday: period_start is 'morning' | 'afternoon'
+  if (group === 'halfday') return dateStr === 'morning' ? 'Morning' : 'Afternoon';
+  // hour: period_start is 'HH:00' (e.g. '09:00')
+  if (group === 'hour') return dateStr;
+  const d    = new Date(dateStr + 'T12:00:00');
+  const mm   = String(d.getMonth() + 1).padStart(2, '0');
+  const dd   = String(d.getDate()).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  if (group === 'month') return `${mm}/${yyyy}`;
+  if (group === 'week')  return `Wk ${mm}/${dd}/${yyyy}`;
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function formatPeriodLabel(dateStr, group) {
+  if (!dateStr) return '—';
+  if (group === 'halfday') return dateStr === 'morning' ? 'Morning' : 'Afternoon';
+  if (group === 'hour')    return dateStr; // already 'HH:00'
+  const d      = new Date(dateStr + 'T12:00:00');
+  const locale = safeLocale;
+  if (group === 'month') return d.toLocaleDateString(locale, { year:'numeric', month:'short' });
+  if (group === 'week')  return 'Wk of ' + d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' });
+  return d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' });
+}
+
+function conditionEmoji(condition) {
+  if (!condition) return '';
+  const c = condition.toLowerCase();
+  if (c === 'clear sky' || c === 'mainly clear') return '☀️';
+  if (c === 'partly cloudy')  return '🌤️';
+  if (c === 'overcast')       return '☁️';
+  if (c.includes('fog'))      return '🌫️';
+  if (c.includes('thunder') || c.includes('storm')) return '⛈️';
+  if (c.includes('snow'))     return '❄️';
+  if (c.includes('drizzle') || c.includes('rain') || c.includes('shower')) return '🌧️';
+  return '🌡️';
+}
+
+// ─── Inverter checkboxes ─────────────────────────────────────────────────────
+
+function renderInverterCheckboxes(side, inverters) {
+  const container = document.getElementById(`inverters-${side}`);
+  // Only show selector when there are multiple inverters to choose from
+  if (!inverters || inverters.length <= 1) { container.innerHTML = ''; return; }
+
+  const cbId = sn => `inv-${side}-${sn.replace(/\W/g, '_')}`;
+  container.innerHTML = `
+    <div class="small text-muted mb-1">Inverters</div>
+    <div class="d-flex flex-wrap gap-2">
+      <div class="form-check form-check-inline mb-0">
+        <input class="form-check-input" type="checkbox" id="inv-${side}-all" checked
+               onchange="onAllInverterChange('${side}')">
+        <label class="form-check-label small fw-semibold" for="inv-${side}-all">All</label>
+      </div>
+      ${inverters.map(inv => `
+        <div class="form-check form-check-inline mb-0">
+          <input class="form-check-input" type="checkbox"
+                 id="${cbId(inv.device_sn)}" value="${escapeHtml(inv.device_sn)}" checked
+                 onchange="onInverterChange('${side}')">
+          <label class="form-check-label small" for="${cbId(inv.device_sn)}">
+            ${escapeHtml(inv.friendly_name || inv.device_sn)}
+          </label>
+        </div>`).join('')}
+    </div>`;
+}
+
+function onAllInverterChange(side) {
+  const state = document.getElementById(`inv-${side}-all`).checked;
+  document.querySelectorAll(`#inverters-${side} .form-check-input:not(#inv-${side}-all)`)
+    .forEach(cb => { cb.checked = state; });
+}
+
+function onInverterChange(side) {
+  const all  = document.querySelectorAll(`#inverters-${side} .form-check-input:not(#inv-${side}-all)`);
+  const n    = [...all].filter(cb => cb.checked).length;
+  const allCb = document.getElementById(`inv-${side}-all`);
+  if (allCb) {
+    allCb.checked       = (n === all.length);
+    allCb.indeterminate = (n > 0 && n < all.length);
+  }
+}
+
+// Returns array of selected SNs, or [] when all are selected (= no filter)
+function getSelectedInverters(side) {
+  const all = document.querySelectorAll(`#inverters-${side} .form-check-input:not(#inv-${side}-all)`);
+  if (!all.length) return [];
+  const checked = [...all].filter(cb => cb.checked).map(cb => cb.value);
+  return checked.length === all.length ? [] : checked;
+}
+
+// True when at least one inverter is checked (or there are no checkboxes = all)
+function hasSelectedInverters(side) {
+  const all = document.querySelectorAll(`#inverters-${side} .form-check-input:not(#inv-${side}-all)`);
+  return !all.length || [...all].some(cb => cb.checked);
+}
+
+// Returns a short label for the selected inverters (empty string = all selected)
+function getInverterLabel(side) {
+  const all = document.querySelectorAll(`#inverters-${side} .form-check-input:not(#inv-${side}-all)`);
+  if (!all.length) return '';
+  const checked = [...all].filter(cb => cb.checked);
+  if (checked.length === all.length) return '';
+  return checked.map(cb => {
+    const inv = allInverters.find(i => i.device_sn === cb.value);
+    return inv ? escapeHtml(inv.friendly_name || inv.device_sn) : escapeHtml(cb.value);
+  }).join(', ');
+}
+
+function showAlert(msg) {
+  document.getElementById('alert-area').innerHTML =
+    `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+      ${escapeHtml(msg)}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`;
+}
+
+function clearAlert() {
+  document.getElementById('alert-area').innerHTML = '';
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+</script>
+
+</body>
+</html>
