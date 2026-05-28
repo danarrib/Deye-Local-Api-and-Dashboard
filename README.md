@@ -27,6 +27,7 @@ This is what is already working:
   - [x] Weather condition change indicators overlaid on the power chart (emoji + dashed line at each transition)
 - [x] Send a daily report to a Telegram Group (using a Telegram Bot)
 - [x] Multi-language UI (English, Brazilian Portuguese, Spanish) — language is stored system-wide and switchable from a footer dropdown on every page
+- [x] SolarmanV5 protocol integration — richer data via TCP port 8899 (Modbus), including inverter temperature and per-panel voltage, current, power, and energy
 
 
 
@@ -94,8 +95,8 @@ If you plan to use only the API, you don't need to run the setup wizard, and you
 {
 "inverter_sn": "1234567890",
 "power_now": 725,
-"power_today": 1,
-"power_total": 1612.6,
+"energy_today": 1,
+"energy_total": 1612.6,
 "device_sn": "0987654321",
 "device_ver": "MW3_16U_5406_1.63",
 "timestamp": "2025-08-20T13:04:45Z",
@@ -104,6 +105,27 @@ If you plan to use only the API, you don't need to run the setup wizard, and you
 ```
 
 ## How it works
+
+### SolarmanV5 / Modbus (primary)
+
+Every Deye micro-inverter's Wi-Fi logging stick exposes a TCP server on **port 8899** — the same port the Solarman mobile app uses for local communication. This project speaks the **SolarmanV5 protocol**, which wraps **Modbus RTU** frames, to read holding registers directly from the inverter.
+
+A single Modbus FC `0x03` read of registers `0x0001`–`0x007D` returns all useful data in one round-trip, including:
+* Power being generated now (W)
+* Energy produced today and lifetime total (kWh)
+* Inverter radiator temperature (°C)
+* Per-panel voltage (V), current (A), power (W), daily and lifetime energy (kWh)
+
+This runs entirely on the local network with no cloud dependency, alongside the Solarman app without interference.
+
+When you add or edit an inverter in the admin panel, the system automatically:
+1. Fetches `status.html` to resolve the logger serial number
+2. Opens a TCP connection to port 8899 to verify SolarmanV5 is reachable
+3. Sets the `solarman_enabled` flag accordingly — no manual configuration needed
+
+### HTTP fallback
+
+For inverters where port 8899 is not reachable, the system falls back to parsing the `status.html` web interface over HTTP Basic Auth. This provides a more limited set of fields:
 
 Every Deye Microinverter has a web interface, that can be accessed by opening the browser and acessing the IP Address of the inverter by http (the default username and password are both `admin`).
 
@@ -132,13 +154,13 @@ This program does exactly that: Parses the `status.html` file and get the follow
 ## Development roadmap
 Here's a list of new features I wish to add to this project in the future:
 
-- [ ] Get data from individual PV inputs (each individual solar panel of each micro-inverter) 
+- [x] Get data from individual PV inputs (each individual solar panel of each micro-inverter)
   - Voltage (V)
   - Current (A)
   - Power (W)
   - Energy Today (kWh)
-  - Energy Total (kWh)
-- [ ] Get Inverter Temperature (Celsius)
+  - Energy Total (kWh) *(PV3/PV4 lifetime total registers not yet confirmed — stored as NULL)*
+- [x] Get Inverter Temperature (Celsius)
 - [x] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
 - [x] Show weather condition changes as emoji icons on the power chart
 - [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
