@@ -191,11 +191,11 @@
             if (data.is_historical) {
               let peak_power = data.peak_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
               document.getElementById('power_now').innerHTML = t('card_peak_power') + '<br />' + peak_power + ' W';
-              document.getElementById('power_today').innerHTML = t('card_energy_produced') + '<br />' + data.total_power_today.toLocaleString() + ' kWh';
+              document.getElementById('power_today').innerHTML = t('card_energy_produced') + '<br />' + data.total_energy_today.toLocaleString() + ' kWh';
             } else {
               let total_power_now = data.total_power_now.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
               document.getElementById('power_now').innerHTML = t('card_power_now') + '<br />' + total_power_now + ' W';
-              document.getElementById('power_today').innerHTML = t('card_energy_today') + '<br />' + data.total_power_today.toLocaleString() + ' kWh';
+              document.getElementById('power_today').innerHTML = t('card_energy_today') + '<br />' + data.total_energy_today.toLocaleString() + ' kWh';
             }
 
             // Update date navigation
@@ -255,7 +255,7 @@
 
       function updateInvertersCharts(data, latestData) {
         // data has the following structure: [{"time": "2025-03-11T09:15:00Z", "device_sn": "3896126058", "power_now": "0"}]
-        // latestData has the following structure: [{"device_sn": "3896126058", "power_now": "0", "power_today": "0.0", "power_total": "0.0", "friendly_name": "Inverter 1"}]
+        // latestData has the following structure: [{"device_sn": "3896126058", "power_now": "0", "energy_today": "0.0", "energy_total": "0.0", "friendly_name": "Inverter 1"}]
 
         // Get the unique inverters serial numbers
         let inverters = data.map(d => d.device_sn);
@@ -314,7 +314,7 @@
         data: {
           labels: labels,
           datasets: [{
-            label: `${friendlyName} Power (${inverter}) - ${data[data.length - 1].power_today} kWh`,
+            label: `${friendlyName} Power (${inverter}) - ${data[data.length - 1].energy_today} kWh`,
             fill: true,
             data: values,
             borderColor: borderColor,

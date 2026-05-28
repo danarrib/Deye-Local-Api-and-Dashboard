@@ -4,8 +4,8 @@
     header('Content-Type: application/json');
 
     $total_power_now = 0;
-    $total_power_today = 0;
-    $total_power_total = 0;
+    $total_energy_today = 0;
+    $total_energy_total = 0;
     $peak_power_now = 0;
     $latest_inverter_data = array();
     $is_historical = false;
@@ -64,8 +64,8 @@
         $row['created_at_local'] = $created_at_utc->setTimezone(new DateTimeZone($powerplant_timezone))->format('Y-m-d\TH:i:s P');
         $row['created_at'] = $created_at_utc->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
         $latest_inverter_data[] = $row;
-        $total_power_today += $row['power_today'];
-        $total_power_total += $row['power_total'];
+        $total_energy_today += $row['energy_today'];
+        $total_energy_total += $row['energy_total'];
 
         if (!$is_historical) {
             $now = new DateTime(null, new DateTimeZone('UTC'));
@@ -76,8 +76,8 @@
         }
     }
 
-    $total_power_today = round($total_power_today, 1);
-    $total_power_total = round($total_power_total, 1);
+    $total_energy_today = round($total_energy_today, 1);
+    $total_energy_total = round($total_energy_total, 1);
 
     $detailed_inverter_data = get_detailed_inverter_todays_data($sunrise, $sunset, $reference_date);
     $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
@@ -103,8 +103,8 @@
         "powerplant_name" => $powerplant_name,
         "powerplant_timezone" => $powerplant_timezone,
         "total_power_now" => $total_power_now,
-        "total_power_today" => $total_power_today,
-        "total_power_total" => $total_power_total,
+        "total_energy_today" => $total_energy_today,
+        "total_energy_total" => $total_energy_total,
         "peak_power_now" => $peak_power_now,
         "is_historical" => $is_historical,
         "timestamp" => $strDate,

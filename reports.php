@@ -108,7 +108,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                 SELECT
                     device_sn,
                     (created_at AT TIME ZONE \$1)::timestamp AS local_ts,
-                    power_today,
+                    energy_today,
                     power_now
                 FROM pvstatsdetail
                 WHERE created_at >= \$2 AND created_at < \$3{$inv_clause}
@@ -134,7 +134,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                     device_sn,
                     local_ts::date AS local_day,
                     EXTRACT(hour FROM local_ts)::int AS hour_of_day,
-                    GREATEST(0, MAX(power_today) - MIN(power_today)) AS kwh
+                    GREATEST(0, MAX(energy_today) - MIN(energy_today)) AS kwh
                 FROM local_stats
                 GROUP BY device_sn, local_ts::date, hour_of_day
             ),
@@ -182,7 +182,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
         ";
     } elseif ($group === 'halfday') {
         // Returns exactly two rows: period_start = 'morning' | 'afternoon'
-        // Energy is computed per device per day per half (MAX-MIN of cumulative power_today),
+        // Energy is computed per device per day per half (MAX-MIN of cumulative energy_today),
         // then summed across all inverters and all days in the range.
         $query = "
             WITH
@@ -192,7 +192,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                     device_sn,
                     local_ts::date AS local_day,
                     CASE WHEN EXTRACT(hour FROM local_ts) < 12 THEN 'morning' ELSE 'afternoon' END AS half,
-                    GREATEST(0, MAX(power_today) - MIN(power_today)) AS kwh
+                    GREATEST(0, MAX(energy_today) - MIN(energy_today)) AS kwh
                 FROM local_stats
                 GROUP BY device_sn, local_ts::date, half
             ),
@@ -247,7 +247,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
                 SELECT
                     device_sn,
                     local_ts::date AS bucket,
-                    GREATEST(0, MAX(power_today) - MIN(power_today)) AS kwh
+                    GREATEST(0, MAX(energy_today) - MIN(energy_today)) AS kwh
                 FROM local_stats
                 GROUP BY device_sn, local_ts::date
             ),

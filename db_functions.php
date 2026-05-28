@@ -7,8 +7,9 @@
             id BIGSERIAL PRIMARY KEY NOT NULL,
             device_sn VARCHAR(30) NOT NULL,
             power_now NUMERIC NOT NULL,
-            power_today NUMERIC NOT NULL,
-            power_total NUMERIC NOT NULL,
+            energy_today NUMERIC NOT NULL,
+            energy_total NUMERIC NOT NULL,
+            radiator_temp SMALLINT,
             created_at TIMESTAMPTZ NOT NULL
         )";
         pg_query($db, $query);
@@ -119,20 +120,85 @@
                 END IF;
             END
         \$\$");
+
+        // Rename power_today → energy_today and power_total → energy_total
+        pg_query($db, "DO \$\$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pvstatsdetail' AND column_name = 'power_today'
+                ) THEN
+                    ALTER TABLE pvstatsdetail RENAME COLUMN power_today TO energy_today;
+                END IF;
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'pvstatsdetail' AND column_name = 'power_total'
+                ) THEN
+                    ALTER TABLE pvstatsdetail RENAME COLUMN power_total TO energy_total;
+                END IF;
+            END
+        \$\$");
+
+        pg_query($db, "ALTER TABLE pvstatsdetail ADD COLUMN IF NOT EXISTS radiator_temp SMALLINT");
+
+        pg_query($db, "ALTER TABLE inverters ADD COLUMN IF NOT EXISTS solarman_enabled BOOLEAN NOT NULL DEFAULT FALSE");
+
+        $query = "CREATE TABLE IF NOT EXISTS pvinputstats (
+            id BIGSERIAL PRIMARY KEY NOT NULL,
+            pvstatsdetail_id BIGINT NOT NULL REFERENCES pvstatsdetail(id) ON DELETE CASCADE,
+            pv_number SMALLINT NOT NULL,
+            power NUMERIC(7,2),
+            voltage NUMERIC(5,2),
+            current NUMERIC(5,2),
+            energy_today NUMERIC(5,2),
+            energy_total NUMERIC(8,2)
+        )";
+        pg_query($db, $query);
+
+        pg_query($db, "CREATE INDEX IF NOT EXISTS idx_pvinputstats_pvstatsdetail_id ON pvinputstats (pvstatsdetail_id)");
     }
 
     function save_inverter_data($data) {
         global $db;
 
-        // if power_now is 0, power_today is 0 and power_total is 0, just skip it
-        if ($data['power_now'] == 0 && $data['power_today'] == 0 && $data['power_total'] == 0) {
+        // if power_now is 0, energy_today is 0 and energy_total is 0, just skip it
+        if ($data['power_now'] == 0 && $data['energy_today'] == 0 && $data['energy_total'] == 0) {
             return;
         }
 
-        pg_query_params($db,
-            "INSERT INTO pvstatsdetail (device_sn, power_now, power_today, power_total, created_at) VALUES ($1, $2, $3, $4, $5)",
-            [$data['device_sn'], $data['power_now'], $data['power_today'], $data['power_total'], $data['timestamp']]
+        $result = pg_query_params($db,
+            "INSERT INTO pvstatsdetail (device_sn, power_now, energy_today, energy_total, radiator_temp, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+            [
+                $data['device_sn'],
+                $data['power_now'],
+                $data['energy_today'],
+                $data['energy_total'],
+                $data['radiator_temp'] ?? null,
+                $data['timestamp'],
+            ]
         );
+
+        if (!empty($data['pv_inputs']) && $result) {
+            $row = pg_fetch_assoc($result);
+            $pvstatsdetail_id = $row['id'];
+            foreach ($data['pv_inputs'] as $pv) {
+                pg_query_params($db,
+                    "INSERT INTO pvinputstats
+                        (pvstatsdetail_id, pv_number, power, voltage, current, energy_today, energy_total)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                    [
+                        $pvstatsdetail_id,
+                        $pv['pv_number'],
+                        $pv['power'],
+                        $pv['voltage'],
+                        $pv['current'],
+                        $pv['energy_today'],
+                        $pv['energy_total'],
+                    ]
+                );
+            }
+        }
 
         pg_query_params($db,
             "INSERT INTO inverters (device_sn, friendly_name, created_at, ip_address, \"order\") VALUES ($1, $2, $3, $4, $5)
@@ -226,7 +292,7 @@
         interval '5 minutes'
     ) AS interval_start
 )
-SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.power_today, idet.friendly_name, idet.order
+SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.energy_today, idet.friendly_name, idet.order
 FROM inverters idet
 left join time_intervals ti ON true
 LEFT JOIN LATERAL (
@@ -312,7 +378,7 @@ ORDER BY ti.interval_start;";
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.energy_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 		order by reference_date, pd.device_sn
@@ -335,7 +401,7 @@ select max(total_energy) as top_energy from total_energy where reference_date <>
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.energy_today) as energy
 		from pvstatsdetail pd
 		group by reference_date, pd.device_sn
 	)
@@ -359,7 +425,7 @@ select max(total_energy) as top_energy from total_energy where year_month <> $1;
 
         $query = "with total_energy as (
 	with inverter_energy as (
-		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.power_today) as energy
+		select (pd.created_at at time zone '$tz')::date as reference_date, pd.device_sn, max(pd.energy_today) as energy
 		from pvstatsdetail pd
 		where (pd.created_at at time zone '$tz') between $1::date and $2::date
 		group by reference_date, pd.device_sn
@@ -386,8 +452,8 @@ select max(total_energy) as total_energy from total_energy;";
 select		p.device_sn,
 			p.created_at,
 			p.power_now,
-			p.power_today as energy_today,
-			p.power_total as energy_total
+			p.energy_today,
+			p.energy_total
 from 		pvstatsdetail p
 where 		p.created_at >= $1 and p.created_at < $2
 order by	device_sn, created_at
@@ -441,7 +507,7 @@ select		pvad.device_sn,
 from 		pvalldata pvad
 cross join lateral generate_series(1, pvad.qty_fillers) gs
 )
-insert into pvstatsdetail (device_sn, power_now, power_today, power_total, created_at)
+insert into pvstatsdetail (device_sn, power_now, energy_today, energy_total, created_at)
 select pdr.device_sn, pdr.power_now, pdr.energy_today, pdr.energy_total, pdr.created_at from pvdataready pdr
 where not exists (
     select 1 from pvstatsdetail p

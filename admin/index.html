@@ -169,6 +169,8 @@
                                 <th data-i18n="admin_inverter_col_ip">IP Address</th>
                                 <th data-i18n="admin_inverter_col_username">Username</th>
                                 <th data-i18n="admin_inverter_col_password">Password</th>
+                                <th data-i18n="admin_inverter_col_device_sn">Logger Serial</th>
+                                <th data-i18n="admin_inverter_col_solarman">SolarmanV5</th>
                                 <th data-i18n="admin_inverter_col_actions">Actions</th>
                             </tr>
                         </thead>
@@ -752,12 +754,24 @@ async function loadInverters() {
     noMsg.style.display = 'none';
 
     data.inverters.forEach(inv => {
+        const isPending = inv.device_sn && inv.device_sn.startsWith('PENDING_');
+        const deviceSnHtml = isPending
+            ? `<span class="text-muted fst-italic">Pending…</span>`
+            : escapeHtml(inv.device_sn || '—');
+
+        const solarmanEnabled = inv.solarman_enabled === 't';
+        const solarmanHtml = solarmanEnabled
+            ? `<span class="badge bg-success">${t('admin_inverter_solarman_enabled')}</span>`
+            : `<span class="badge bg-secondary">${t('admin_inverter_solarman_disabled')}</span>`;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${escapeHtml(inv.friendly_name)}</td>
             <td>${escapeHtml(inv.ip_address)}</td>
             <td>${escapeHtml(inv.username)}</td>
             <td>${escapeHtml(inv.password)}</td>
+            <td>${deviceSnHtml}</td>
+            <td>${solarmanHtml}</td>
             <td>
                 <button class="btn btn-outline-primary btn-sm me-1" onclick='editInverter(${JSON.stringify(inv)})'>${t('admin_inverter_edit')}</button>
                 <button class="btn btn-outline-danger btn-sm" onclick="deleteInverter(${inv.id})">${t('admin_inverter_delete')}</button>
@@ -807,7 +821,22 @@ async function saveInverter() {
     if (result.ok) {
         inverterModal.hide();
         loadInverters();
-        showAlert(t('admin_alert_inverter_saved'), 'success');
+        const d = result.data.discovery;
+        let msg, level;
+        if (!d || !('http_ok' in d)) {
+            msg   = t('admin_alert_inverter_saved');
+            level = 'success';
+        } else if (!d.http_ok) {
+            msg   = t('admin_inverter_saved_http_fail');
+            level = 'warning';
+        } else if (d.solarman_enabled) {
+            msg   = t('admin_inverter_saved_solarman_ok', { sn: d.device_sn });
+            level = 'success';
+        } else {
+            msg   = t('admin_inverter_saved_solarman_no', { sn: d.device_sn });
+            level = 'info';
+        }
+        showAlert(msg, level);
     } else {
         showAlert(result.data.error || t('alert_server_error'));
     }

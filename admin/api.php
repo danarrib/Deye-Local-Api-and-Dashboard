@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 
 require_once __DIR__ . '/../config_loader.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../solarman_functions.php';
 
 $action = $_GET['action'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -57,6 +58,45 @@ switch ($action) {
     default:
         http_response_code(404);
         echo json_encode(['error' => 'Unknown action']);
+}
+
+// ─── Inverter discovery ─────────────────────────────────────────────────────
+
+/**
+ * Step 1: HTTP fetch → parse logger serial (cover_mid) → update device_sn.
+ * Step 2: TCP verify on port 8899 → update solarman_enabled.
+ * Returns ['http_ok' => bool, 'device_sn' => string|null, 'solarman_enabled' => bool].
+ */
+function run_inverter_discovery($db, $id, $ip, $username, $password): array
+{
+    $url = "http://{$ip}/status.html";
+    $ch  = curl_init($url);
+    curl_setopt($ch, CURLOPT_USERPWD, "{$username}:{$password}");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    $output    = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    unset($ch);
+
+    if ($http_code !== 200) {
+        return ['http_ok' => false, 'device_sn' => null, 'solarman_enabled' => false];
+    }
+
+    $device_sn = preg_match('/cover_mid = "(.*?)"/', $output, $m) ? trim($m[1]) : null;
+    if (!$device_sn) {
+        return ['http_ok' => true, 'device_sn' => null, 'solarman_enabled' => false];
+    }
+
+    pg_query_params($db, "UPDATE inverters SET device_sn = $1 WHERE id = $2", [$device_sn, $id]);
+
+    $solarman_ok = solarman_verify($ip, intval($device_sn));
+    pg_query_params($db,
+        "UPDATE inverters SET solarman_enabled = $1 WHERE id = $2",
+        [$solarman_ok ? 'true' : 'false', $id]
+    );
+
+    return ['http_ok' => true, 'device_sn' => $device_sn, 'solarman_enabled' => $solarman_ok];
 }
 
 // ─── Handlers ───────────────────────────────────────────────────────────────
@@ -284,7 +324,7 @@ function handle_get_inverters() {
         return;
     }
 
-    $result = pg_query($db, "SELECT id, device_sn, friendly_name, ip_address, username, password, \"order\" FROM inverters ORDER BY \"order\", id");
+    $result = pg_query($db, "SELECT id, device_sn, friendly_name, ip_address, username, password, \"order\", solarman_enabled FROM inverters ORDER BY \"order\", id");
     $rows = pg_fetch_all($result);
 
     echo json_encode(['inverters' => $rows ?: []]);
@@ -326,8 +366,11 @@ function handle_add_inverter() {
     );
 
     $new_row = pg_fetch_assoc($result);
+    $new_id  = (int)$new_row['id'];
 
-    echo json_encode(['success' => true, 'id' => (int)$new_row['id']]);
+    $discovery = run_inverter_discovery($db, $new_id, $ip_address, $username, $password);
+
+    echo json_encode(['success' => true, 'id' => $new_id, 'discovery' => $discovery]);
 }
 
 function handle_update_inverter() {
@@ -364,7 +407,9 @@ function handle_update_inverter() {
         [$friendly_name, $ip_address, $username, $password, (int)$id]
     );
 
-    echo json_encode(['success' => true]);
+    $discovery = run_inverter_discovery($db, (int)$id, $ip_address, $username, $password);
+
+    echo json_encode(['success' => true, 'discovery' => $discovery]);
 }
 
 function handle_delete_inverter() {

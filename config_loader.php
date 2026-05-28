@@ -88,7 +88,7 @@ function load_inverter_list() {
     $db = get_db_connection();
     if (!$db) return [];
 
-    $result = @pg_query($db, "SELECT ip_address AS ipaddress, username, password, friendly_name FROM inverters ORDER BY \"order\", id");
+    $result = @pg_query($db, "SELECT ip_address AS ipaddress, username, password, friendly_name, device_sn, solarman_enabled FROM inverters ORDER BY \"order\", id");
     if (!$result) return [];
 
     $rows = pg_fetch_all($result);

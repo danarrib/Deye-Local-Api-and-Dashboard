@@ -25,6 +25,7 @@
     include_once 'weather_functions.php';
     include_once 'telegram_functions.php';
     include_once 'log_functions.php';
+    include_once 'solarman_functions.php';
 
     $db = get_db_connection();
 
@@ -85,8 +86,8 @@
             $json = array(
                 "inverter_sn" => $inverter_sn,
                 "power_now" => $power_now,
-                "power_today" => $power_today,
-                "power_total" => $power_total,
+                "energy_today" => $power_today,
+                "energy_total" => $power_total,
                 "device_sn" => $device_sn,
                 "device_ver" => $device_ver,
                 "timestamp" => $date->format('Y-m-d\TH:i:s\Z'),
@@ -130,7 +131,7 @@
     }
 
     function refresh_inverter_data() {
-        if(is_after_sunset_or_before_sunrise()) {
+        if (is_after_sunset_or_before_sunrise()) {
             return;
         }
 
@@ -138,50 +139,56 @@
         global $processStartDateTime;
         $order = 0;
 
-        // Iterate over the list of inverters
         foreach ($inverter_list as $inverter) {
             $order++;
-            $data = get_inverter_data($inverter['ipaddress'], $inverter['username'], $inverter['password']);
+            $data = null;
 
-            // If the data has "error" key, try to restart the inverter and get the data again after 1 minute
-            if (array_key_exists("error", $data)) {
-                $tryToRestart = false;
-
-                if($tryToRestart === true){
-                    // Restart the inverter
-                    $restart = restart_inverter($inverter['ipaddress'], $inverter['username'], $inverter['password']);
-                    if ($restart) {
-                        // Wait for 1 minute before trying to get the data again
-                        set_time_limit(120);
-                        sleep(60);
-                    }
+            // Try SolarmanV5 first when enabled for this inverter
+            if (!empty($inverter['solarman_enabled']) && $inverter['solarman_enabled'] === 't') {
+                $sm = solarman_poll($inverter['ipaddress'], intval($inverter['device_sn']));
+                if (!isset($sm['error'])) {
+                    $data = $sm;
+                    $data['device_sn'] = $inverter['device_sn'];
+                    $data['timestamp'] = (new DateTime(null, new DateTimeZone('UTC')))->format('Y-m-d\TH:i:s\Z');
+                } else {
+                    app_log('warning', 'SolarmanV5 poll failed, falling back to HTTP', [
+                        'event'    => 'solarman_fallback',
+                        'inverter' => $inverter['ipaddress'],
+                        'error'    => $sm['error'],
+                    ]);
                 }
-
-                sleep(10);
-                $data = get_inverter_data($inverter['ipaddress'], $inverter['username'], $inverter['password']);
             }
 
-            // if the data has "error" key, just skip it
-            if (array_key_exists("error", $data)) {
-                app_log('error', 'Failed to fetch inverter data', [
-                    'event'   => 'inverter_fetch_error',
-                    'inverter' => $inverter['ipaddress'],
-                    'name'    => $inverter['friendly_name'],
-                ]);
-                continue;
+            // Fall back to HTTP polling if SolarmanV5 is disabled or failed
+            if ($data === null) {
+                $data = get_inverter_data($inverter['ipaddress'], $inverter['username'], $inverter['password']);
+
+                if (array_key_exists('error', $data)) {
+                    sleep(10);
+                    $data = get_inverter_data($inverter['ipaddress'], $inverter['username'], $inverter['password']);
+                }
+
+                if (array_key_exists('error', $data)) {
+                    app_log('error', 'Failed to fetch inverter data', [
+                        'event'    => 'inverter_fetch_error',
+                        'inverter' => $inverter['ipaddress'],
+                        'name'     => $inverter['friendly_name'],
+                    ]);
+                    continue;
+                }
             }
 
             app_log('info', 'Inverter data collected', [
-                'event'       => 'inverter_fetch',
-                'inverter'    => $inverter['ipaddress'],
-                'name'        => $inverter['friendly_name'],
-                'power_now'   => $data['power_now'],
-                'power_today' => $data['power_today'],
+                'event'        => 'inverter_fetch',
+                'inverter'     => $inverter['ipaddress'],
+                'name'         => $inverter['friendly_name'],
+                'power_now'    => $data['power_now'],
+                'energy_today' => $data['energy_today'],
             ]);
 
-            $data["friendly_name"] = $inverter['friendly_name'];
-            $data["ip_address"] = $inverter['ipaddress'];
-            $data["order"] = $order;
+            $data['friendly_name'] = $inverter['friendly_name'];
+            $data['ip_address']    = $inverter['ipaddress'];
+            $data['order']         = $order;
 
             resolve_pending_inverter($data['device_sn'], $inverter['ipaddress']);
             save_inverter_data($data);
@@ -205,22 +212,22 @@
 
             // Create variables to store the total power being generated now, today and total
             $total_power_now = 0;
-            $total_power_today = 0;
-            $total_power_total = 0;
+            $total_energy_today = 0;
+            $total_energy_total = 0;
 
             // Iterate over the list of inverters
             foreach ($all_data as $data) {
                 $total_power_now += $data['power_now'];
-                $total_power_today += $data['power_today'];
-                $total_power_total += $data['power_total'];
+                $total_energy_today += $data['energy_today'];
+                $total_energy_total += $data['energy_total'];
             }
 
-            $messageText = "Total energy generated today: " . number_format($total_power_today, 1) . " kWh";
+            $messageText = "Total energy generated today: " . number_format($total_energy_today, 1) . " kWh";
 
             $top_daily_energy = getDailyTopEnergy($processStartDateTime);
 
-            // If top_daily_energy is greater than total_power_today, add a message to the telegram message
-            if (($top_daily_energy > 0 && $total_power_today >= $top_daily_energy) || $force === true) {
+            // If top_daily_energy is greater than total_energy_today, add a message to the telegram message
+            if (($top_daily_energy > 0 && $total_energy_today >= $top_daily_energy) || $force === true) {
                 $messageText .= "\n🏆 New daily record! Previous record was " . number_format($top_daily_energy, 1) . " kWh";
             }
 
@@ -239,7 +246,7 @@
 
             app_log('info', 'Daily report sent', [
                 'event'        => 'daily_report',
-                'total_kwh'    => round($total_power_today, 2),
+                'total_kwh'    => round($total_energy_today, 2),
             ]);
             send_telegram_daily_chart($messageText);
         }
@@ -350,7 +357,7 @@
 
         // Iterate over the list of inverters
         foreach ($latest_data as $data) {
-            $total_energy_today += $data['power_today'];
+            $total_energy_today += $data['energy_today'];
         }
 
         // Start building the chart
