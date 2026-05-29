@@ -314,6 +314,33 @@
         return $sunrise;
     }
 
+    function loadWeatherIcon($condition, $target_size) {
+        $c = strtolower($condition ?? '');
+        if ($c === 'clear sky' || $c === 'mainly clear')        $name = 'clear';
+        elseif ($c === 'partly cloudy')                         $name = 'partly_cloudy';
+        elseif ($c === 'overcast')                              $name = 'overcast';
+        elseif (strpos($c, 'fog') !== false)                    $name = 'fog';
+        elseif (strpos($c, 'thunder') !== false || strpos($c, 'storm') !== false) $name = 'storm';
+        elseif (strpos($c, 'snow') !== false)                   $name = 'snow';
+        elseif (strpos($c, 'drizzle') !== false || strpos($c, 'rain') !== false || strpos($c, 'shower') !== false) $name = 'rain';
+        else                                                    $name = 'unknown';
+
+        $path = __DIR__ . '/img/icon_' . $name . '.png';
+        if (!file_exists($path)) return false;
+
+        $src = imagecreatefrompng($path);
+        if (!$src) return false;
+
+        $dst = imagecreatetruecolor($target_size, $target_size);
+        imagesavealpha($dst, true);
+        imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+        imagealphablending($dst, false);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $target_size, $target_size, imagesx($src), imagesy($src));
+        imagedestroy($src);
+
+        return $dst;
+    }
+
     function generateTodaysChart() {
         global $powerplant_name, $powerplant_timezone;
         $date = new DateTime(null, new DateTimeZone($powerplant_timezone));
@@ -339,18 +366,26 @@
 
         // Get Detailed data to build the chart
         $detailed_powerplant_data = get_detailed_powerplant_todays_data($sunrise, $sunset, $reference_date);
+        $weather_changes = get_weather_changes_for_date($sunrise, $sunset);
 
         $total_energy_today = 0;
         $peak_power_today = 0;
         $peak_power_time = '';
+        $rad_temps = [];
 
-        foreach ($detailed_powerplant_data as $point) 
+        foreach ($detailed_powerplant_data as $point)
         {
             if ($point['total_power_now'] > $peak_power_today) {
                 $peak_power_today = $point['total_power_now'];
                 $peak_power_time = (new DateTime($point['time'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone($powerplant_timezone))->format('H:i');
             }
+            if ($point['avg_radiator_temp'] !== null && $point['avg_radiator_temp'] !== '') {
+                $rad_temps[] = (int)$point['avg_radiator_temp'];
+            }
         }
+
+        $avg_radiator_temp  = count($rad_temps) > 0 ? round(array_sum($rad_temps) / count($rad_temps)) : null;
+        $peak_radiator_temp = count($rad_temps) > 0 ? max($rad_temps) : null;
 
         // Get latest data from the inverters
         $latest_data = get_today_latest_data();
@@ -361,7 +396,7 @@
         }
 
         // Start building the chart
-        $canvas_resolution = 'hd'; // Options: 'sd', 'hd', 'fhd', 'qhd', '4k', '8k'
+        $canvas_resolution = 'fhd'; // Options: 'sd', 'hd', 'fhd', 'qhd', '4k', '8k'
 
         if ($canvas_resolution == 'sd') {
             $canvas_width = 640;
@@ -390,7 +425,7 @@
         $margins = $canvas_width * 0.065;
         $labels_font_size = $canvas_height * 0.017;
         $title_font_size = $canvas_height * 0.025;
-        $summary_font_size = $canvas_height * 0.022;
+        $summary_font_size = $canvas_height * 0.015;
         $font_name = __DIR__ . '/assets/UbuntuMono-Regular.ttf'; // Path to a TTF font file
 
         $numberOfPoints = count($detailed_powerplant_data);
@@ -401,6 +436,9 @@
         $minValue = 0; // We want the chart to start at 0
         $ratioX = $chartWidth / ($numberOfPoints - 1);
         $ratioY = $chartHeight / ($maxValue - $minValue);
+        $tempMinValue = 0;
+        $tempMaxValue = 90;
+        $ratioYTemp = $chartHeight / ($tempMaxValue - $tempMinValue);
 
         // Create the image
         $img = imagecreatetruecolor($canvas_width, $canvas_height);
@@ -430,7 +468,7 @@
             imageline($img, $x, $canvas_height - $margins, $x, $margins, $grey);
         }
 
-        // Draw the labels (power) on the y-axis
+        // Draw the labels (power) on the left y-axis
         $maxPowerLabel = ceil($maxValue / 100) * 100; // Round up to the nearest 100
         $numberOfYLabels = 5;
         $step = ($maxPowerLabel - $minValue) / $numberOfYLabels;
@@ -441,6 +479,18 @@
             imagettftext($img, $labels_font_size, 0, $margins - ($canvas_width * 0.039), $y + 5, $black, $font_name, $label);
             imageline($img, $margins, $y, $canvas_width - $margins, $y, $grey);
         }
+
+        // Draw temperature labels on the right y-axis
+        $numberOfTempLabels = 6;
+        $tempStep = ($tempMaxValue - $tempMinValue) / $numberOfTempLabels;
+        for ($i = 0; $i <= $numberOfTempLabels; $i++) {
+            $tempValue = $tempMinValue + $i * $tempStep;
+            $y = $canvas_height - $margins - ($tempValue - $tempMinValue) * $ratioYTemp;
+            $label = round($tempValue) . "°C";
+            imagettftext($img, $labels_font_size, 0, $canvas_width - $margins + ($canvas_width * 0.007), $y + 5, $red, $font_name, $label);
+        }
+
+        $line_thickness = max(2, (int)($canvas_width * 0.002));
 
         // Draw the chart
         for ($i = 0; $i < $numberOfPoints - 1; $i++) {
@@ -460,7 +510,8 @@
             $x2 = round($x2);
             $y2 = round($y2);
 
-            // Draw the polygon
+            // Draw the fill polygon at thickness 1 to avoid compounding alpha on edges
+            imagesetthickness($img, 1);
             $points = array(
                 $x1, $canvas_height - $margins,
                 $x1, $y1,
@@ -469,8 +520,61 @@
             );
             imagefilledpolygon($img, $points, 4, $light_blue);
 
-            // Draw the line
+            // Draw the top line at full thickness
+            imagesetthickness($img, $line_thickness);
             imageline($img, $x1, $y1, $x2, $y2, $blue);
+        }
+
+        imagesetthickness($img, $line_thickness);
+        // Draw the radiator temperature line (red, no fill)
+        for ($i = 0; $i < $numberOfPoints - 1; $i++) {
+            if ($detailed_powerplant_data[$i]['avg_radiator_temp'] === null || $detailed_powerplant_data[$i]['avg_radiator_temp'] === ''
+                || $detailed_powerplant_data[$i + 1]['avg_radiator_temp'] === null || $detailed_powerplant_data[$i + 1]['avg_radiator_temp'] === '') {
+                continue;
+            }
+            $x1 = round($margins + $i * $ratioX) + 1;
+            $y1 = round($canvas_height - $margins - ((int)$detailed_powerplant_data[$i]['avg_radiator_temp'] - $tempMinValue) * $ratioYTemp);
+            $x2 = round($margins + ($i + 1) * $ratioX);
+            $y2 = round($canvas_height - $margins - ((int)$detailed_powerplant_data[$i + 1]['avg_radiator_temp'] - $tempMinValue) * $ratioYTemp);
+            imageline($img, $x1, $y1, $x2, $y2, $red);
+        }
+
+        imagesetthickness($img, 1);
+        // Draw weather condition change annotations
+        if (!empty($weather_changes) && $numberOfPoints > 1) {
+            $weather_grey = imagecolorallocatealpha($img, 100, 100, 100, 64);
+            imagealphablending($img, true);
+            $icon_size    = (int)($canvas_height * 0.03);
+            $dash_len     = (int)($canvas_height * 0.012);
+            $gap_len      = (int)($canvas_height * 0.008);
+
+            foreach ($weather_changes as $change) {
+                $changeTime = new DateTime($change['time'], new DateTimeZone('UTC'));
+
+                // Find closest data point index by timestamp
+                $closestIdx = 0;
+                $minDiff    = PHP_INT_MAX;
+                foreach ($detailed_powerplant_data as $idx => $point) {
+                    $diff = abs($changeTime->getTimestamp() - (new DateTime($point['time'], new DateTimeZone('UTC')))->getTimestamp());
+                    if ($diff < $minDiff) { $minDiff = $diff; $closestIdx = $idx; }
+                }
+
+                $x     = (int)round($margins + $closestIdx * $ratioX);
+                $y_top = (int)$margins;
+                $y_bot = (int)($canvas_height - $margins);
+
+                // Dashed vertical line
+                for ($y = $y_top; $y < $y_bot; $y += $dash_len + $gap_len) {
+                    imageline($img, $x, $y, $x, min($y + $dash_len, $y_bot), $weather_grey);
+                }
+
+                $icon = loadWeatherIcon($change['condition'], $icon_size);
+                if ($icon !== false) {
+                    imagealphablending($img, true);
+                    imagecopy($img, $icon, $x + 1, $y_top + 2, 0, 0, $icon_size, $icon_size);
+                    imagedestroy($icon);
+                }
+            }
         }
 
         // Draw the border around the chart
@@ -488,8 +592,9 @@
         imagettftext($img, $summary_font_size, 90, $canvas_width * 0.02, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
 
         // Add the summary information: total energy generated today, peak power and time it occurred, sunrise and sunset times
-        $summary =  "Total Energy: " . number_format($total_energy_today, 1) . " kWh\n";
-        $summary .= "Peak Power:   " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
+        $summary =  "Total Energy:   " . number_format($total_energy_today, 1) . " kWh\n";
+        $summary .= "Peak Power:     " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
+        $summary .= "Avg/Peak Rad:   " . ($avg_radiator_temp !== null ? $avg_radiator_temp . "/" . $peak_radiator_temp . " C" : "N/A") . "\n";
         $summary .= "Sunrise: " . $sunrise->format('H:i') . " | Sunset: " . $sunset->format('H:i') . "\n";
 
         // Get the text size to draw a box around it
