@@ -1,7 +1,13 @@
 FROM debian:bookworm-slim
 
-# Install cron
-RUN apt-get update && apt-get install -y cron curl iputils-ping postgresql-client \
+# Add the official PostgreSQL apt repo so pg_dump version matches the server
+RUN apt-get update && apt-get install -y gnupg curl \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+       | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+       > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y cron iputils-ping postgresql-client-17 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create the log file to be able to run tail

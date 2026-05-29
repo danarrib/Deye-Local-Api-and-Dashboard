@@ -15,7 +15,7 @@ services:
     restart: always
 
   deye_db:
-    image: postgres:latest
+    image: postgres:17
     environment:
       - POSTGRES_USER=deye_db_user
       - POSTGRES_PASSWORD=deye_db_pass_1234
