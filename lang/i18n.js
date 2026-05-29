@@ -18,7 +18,7 @@ async function i18nInit(basePath = '') {
   } catch(e) { _lang = 'en'; }
 
   try {
-    const r = await fetch(basePath + `lang/${_lang}.json`);
+    const r = await fetch(basePath + `lang/${_lang}.json`, { cache: 'no-store' });
     _translations = await r.json();
   } catch(e) { _translations = {}; }
 

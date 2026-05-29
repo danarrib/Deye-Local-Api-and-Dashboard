@@ -117,7 +117,15 @@
           <div class="d-flex gap-3 pt-1">
             <div class="form-check mb-0">
               <input class="form-check-input" type="checkbox" id="chk-power" checked>
-              <label class="form-check-label small" for="chk-power" data-i18n="chk_power">Power</label>
+              <label class="form-check-label small" for="chk-power" data-i18n="chk_energy">Energy</label>
+            </div>
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="chk-peak-power">
+              <label class="form-check-label small" for="chk-peak-power" data-i18n="chk_peak_power">Peak Power</label>
+            </div>
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="chk-avg-temp">
+              <label class="form-check-label small" for="chk-avg-temp" data-i18n="chk_avg_temp">Avg Temp</label>
             </div>
             <div class="form-check mb-0">
               <input class="form-check-input" type="checkbox" id="chk-radiator">
@@ -630,10 +638,12 @@ function renderChart(a, b) {
   const aData       = a.data;
   const bData       = b ? b.data : null;
   const chartType   = document.getElementById('chart-type').value;
-  const showPower   = document.getElementById('chk-power').checked;
-  const showRadiator= document.getElementById('chk-radiator').checked;
+  const showPower    = document.getElementById('chk-power').checked;
+  const showPeakPower = document.getElementById('chk-peak-power').checked;
+  const showAvgTemp  = document.getElementById('chk-avg-temp').checked;
+  const showRadiator = document.getElementById('chk-radiator').checked;
 
-  if (!showPower && !showRadiator) return;
+  if (!showPower && !showPeakPower && !showAvgTemp && !showRadiator) return;
 
   const groupLabel = {
     hour:    t('chart_period_hour'),
@@ -656,7 +666,7 @@ function renderChart(a, b) {
   const bInvSuffix = b ? getInverterLabel('b') : '';
   const isDoughnut = chartType === 'doughnut';
   const isLine     = chartType === 'line';
-  const useDualY   = showPower && showRadiator && !isDoughnut;
+  const useDualY   = (showPower || showPeakPower) && (showRadiator || showAvgTemp) && !isDoughnut;
 
   const sliceColors = Array.from({ length: maxLen }, (_, i) =>
     `hsla(${Math.round((i / Math.max(maxLen, 1)) * 360)}, 65%, 55%, 0.85)`
@@ -678,9 +688,14 @@ function renderChart(a, b) {
     };
   }
 
-  const aEnergy   = Array.from({ length: maxLen }, (_, i) =>
+  const aEnergy    = Array.from({ length: maxLen }, (_, i) =>
     i < aData.length ? (parseFloat(aData[i].energy_kwh) || 0) : null);
-  const aRadiator = Array.from({ length: maxLen }, (_, i) =>
+  const aPeakPower = Array.from({ length: maxLen }, (_, i) =>
+    i < aData.length && aData[i].peak_power_w ? parseFloat(aData[i].peak_power_w) : null);
+  const aAvgTemp   = Array.from({ length: maxLen }, (_, i) =>
+    i < aData.length && aData[i].avg_temp !== null && aData[i].avg_temp !== ''
+      ? parseFloat(aData[i].avg_temp) : null);
+  const aRadiator  = Array.from({ length: maxLen }, (_, i) =>
     i < aData.length && aData[i].avg_radiator_temp !== null && aData[i].avg_radiator_temp !== ''
       ? parseFloat(aData[i].avg_radiator_temp) : null);
 
@@ -695,6 +710,16 @@ function renderChart(a, b) {
     datasets.push(makeDataset(aLabel, aEnergy, 'rgb(54,162,235)', 'rgba(54,162,235,0.7)', useDualY ? 'y' : undefined));
     datasetSources.push(aData);
   }
+  if (showPeakPower) {
+    const ppLabel = b ? `${t('chk_peak_power')} A (${a.from} → ${a.to})` : `${t('chk_peak_power')} (${a.from} → ${a.to})`;
+    datasets.push(makeDataset(ppLabel, aPeakPower, 'rgb(153,102,255)', 'rgba(153,102,255,0.7)', useDualY ? 'y' : undefined, { forceLineStyle: true, spanGaps: true }));
+    datasetSources.push(aData);
+  }
+  if (showAvgTemp) {
+    const atLabel = b ? `${t('chk_avg_temp')} A (${a.from} → ${a.to})` : `${t('chk_avg_temp')} (${a.from} → ${a.to})`;
+    datasets.push(makeDataset(atLabel, aAvgTemp, 'rgb(255,205,86)', 'rgba(255,205,86,0.7)', useDualY ? 'y2' : undefined, { forceLineStyle: true, spanGaps: true }));
+    datasetSources.push(aData);
+  }
   if (showRadiator) {
     const rLabel = b ? `${t('chk_radiator_temp')} A (${a.from} → ${a.to})` : `${t('chk_radiator_temp')} (${a.from} → ${a.to})`;
     datasets.push(makeDataset(rLabel, aRadiator, 'rgb(255,99,132)', 'rgba(255,99,132,0.7)', useDualY ? 'y2' : undefined, { forceLineStyle: true, spanGaps: true }));
@@ -702,15 +727,30 @@ function renderChart(a, b) {
   }
 
   if (bData) {
-    const bEnergy   = Array.from({ length: maxLen }, (_, i) =>
+    const bEnergy    = Array.from({ length: maxLen }, (_, i) =>
       i < bData.length ? (parseFloat(bData[i].energy_kwh) || 0) : null);
-    const bRadiator = Array.from({ length: maxLen }, (_, i) =>
+    const bPeakPower = Array.from({ length: maxLen }, (_, i) =>
+      i < bData.length && bData[i].peak_power_w ? parseFloat(bData[i].peak_power_w) : null);
+    const bAvgTemp   = Array.from({ length: maxLen }, (_, i) =>
+      i < bData.length && bData[i].avg_temp !== null && bData[i].avg_temp !== ''
+        ? parseFloat(bData[i].avg_temp) : null);
+    const bRadiator  = Array.from({ length: maxLen }, (_, i) =>
       i < bData.length && bData[i].avg_radiator_temp !== null && bData[i].avg_radiator_temp !== ''
         ? parseFloat(bData[i].avg_radiator_temp) : null);
 
     const bLabel = `${t('range_b')} (${b.from} → ${b.to})${bInvSuffix ? ': ' + bInvSuffix : ''}`;
     if (showPower) {
       datasets.push(makeDataset(bLabel, bEnergy, 'rgb(255,159,64)', 'rgba(255,159,64,0.7)', useDualY ? 'y' : undefined));
+      datasetSources.push(bData);
+    }
+    if (showPeakPower) {
+      const bppLabel = `${t('chk_peak_power')} B (${b.from} → ${b.to})`;
+      datasets.push(makeDataset(bppLabel, bPeakPower, 'rgb(201,203,207)', 'rgba(201,203,207,0.7)', useDualY ? 'y' : undefined, { forceLineStyle: true, spanGaps: true }));
+      datasetSources.push(bData);
+    }
+    if (showAvgTemp) {
+      const batLabel = `${t('chk_avg_temp')} B (${b.from} → ${b.to})`;
+      datasets.push(makeDataset(batLabel, bAvgTemp, 'rgb(255,166,0)', 'rgba(255,166,0,0.7)', useDualY ? 'y2' : undefined, { forceLineStyle: true, spanGaps: true }));
       datasetSources.push(bData);
     }
     if (showRadiator) {
@@ -733,10 +773,15 @@ function renderChart(a, b) {
     return lines;
   };
 
+  const hasLeftSeries  = showPower || showPeakPower;
+  const leftAxisTitle  = showPower && showPeakPower ? `${t('chart_energy_kwh')} / W`
+                       : showPower ? t('chart_energy_kwh')
+                       : showPeakPower ? 'W'
+                       : '°C';
   const scales = isDoughnut ? {} : {
     y: {
-      beginAtZero: showPower,
-      title: { display: useDualY || showPower, text: showPower ? t('chart_energy_kwh') : '°C' },
+      beginAtZero: hasLeftSeries,
+      title: { display: useDualY || hasLeftSeries, text: leftAxisTitle },
     },
     ...(useDualY ? {
       y2: {

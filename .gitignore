@@ -2,6 +2,7 @@
 CLAUDE.md
 tasks/
 config.php
+poc/
 scripts/node_modules/
 rebuild.sh
 phpinfo.php
