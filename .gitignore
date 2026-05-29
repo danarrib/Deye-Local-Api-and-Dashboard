@@ -7,6 +7,6 @@ scripts/node_modules/
 rebuild.sh
 phpinfo.php
 backups/*.sql.gz
-backups-test/*.sql.gz
+backups-test/
 docker-compose.test.yml
 rebuild-test.sh
