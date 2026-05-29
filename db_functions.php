@@ -292,7 +292,7 @@
         interval '5 minutes'
     ) AS interval_start
 )
-SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.energy_today, idet.friendly_name, idet.order
+SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.energy_today, pvsd.radiator_temp, idet.friendly_name, idet.order
 FROM inverters idet
 left join time_intervals ti ON true
 LEFT JOIN LATERAL (
