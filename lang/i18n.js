@@ -8,14 +8,24 @@ let _translations = {};
 let _lang = 'en';
 let _basePath = '';
 
+function _browserLang() {
+  const supported = SUPPORTED_LANGUAGES.map(l => l.code);
+  for (const lang of (navigator.languages || [navigator.language])) {
+    if (supported.includes(lang)) return lang;
+    const match = supported.find(c => c.split('-')[0] === lang.split('-')[0]);
+    if (match) return match;
+  }
+  return 'en';
+}
+
 async function i18nInit(basePath = '') {
   _basePath = basePath;
 
   try {
     const r = await fetch(basePath + 'settings.php?action=language');
     const s = await r.json();
-    _lang = s.language || 'en';
-  } catch(e) { _lang = 'en'; }
+    _lang = s.language || _browserLang();
+  } catch(e) { _lang = _browserLang(); }
 
   try {
     const r = await fetch(basePath + `lang/${_lang}.json`, { cache: 'no-store' });

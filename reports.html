@@ -43,11 +43,11 @@
           <div class="row g-2">
             <div class="col">
               <label class="form-label mb-1 small" data-i18n="label_from">From</label>
-              <input type="date" class="form-control form-control-sm" id="a-from" onchange="clearPreset('a')">
+              <input type="date" class="form-control form-control-sm" id="a-from" onchange="clearPreset('a'); updateGroupWarning()">
             </div>
             <div class="col">
               <label class="form-label mb-1 small" data-i18n="label_to">To</label>
-              <input type="date" class="form-control form-control-sm" id="a-to" onchange="clearPreset('a')">
+              <input type="date" class="form-control form-control-sm" id="a-to" onchange="clearPreset('a'); updateGroupWarning()">
             </div>
           </div>
           <div class="row g-2 mt-1">
@@ -97,12 +97,14 @@
       <div class="row g-2 align-items-end">
         <div class="col-auto">
           <label class="form-label mb-1 small" data-i18n="label_group_by">Group by</label>
-          <select class="form-select form-select-sm" id="group-by" style="width:auto">
+          <select class="form-select form-select-sm" id="group-by" style="width:auto" onchange="updateGroupWarning()">
+            <option value="none" data-i18n="group_none">None</option>
             <option value="hour" data-i18n="group_hour">Hour</option>
             <option value="halfday" data-i18n="group_halfday">Morning and Afternoon</option>
             <option value="day" selected data-i18n="group_day">Day</option>
             <option value="week" data-i18n="group_week">Week</option>
             <option value="month" data-i18n="group_month">Month</option>
+            <option value="year" data-i18n="group_year">Year</option>
           </select>
         </div>
         <div class="col-auto">
@@ -140,6 +142,10 @@
         <div class="col-auto" id="loading-indicator" style="display:none">
           <span class="text-muted small" data-i18n="loading">Loading…</span>
         </div>
+      </div>
+
+      <div id="group-warn" class="text-warning small mt-2" style="display:none">
+        ⚠ Large date range with no grouping — report may be slow.
       </div>
 
     </div>
@@ -277,6 +283,17 @@ function buildPresets(isSouthern) {
     return { from: ymd(d.getFullYear(), d.getMonth()+1, d.getDate()), to: todayStr };
   }
 
+  function todayRange() { return { from: todayStr, to: todayStr }; }
+  function yesterdayRange() {
+    const d = new Date(today); d.setDate(d.getDate() - 1);
+    const s = ymd(d.getFullYear(), d.getMonth()+1, d.getDate());
+    return { from: s, to: s };
+  }
+  function dayBeforeYesterdayRange() {
+    const d = new Date(today); d.setDate(d.getDate() - 2);
+    const s = ymd(d.getFullYear(), d.getMonth()+1, d.getDate());
+    return { from: s, to: s };
+  }
   function thisMonth() { return { from: ymd(Y, today.getMonth()+1, 1), to: todayStr }; }
   function lastMonth() {
     const m = today.getMonth(); // 0-indexed prev month
@@ -307,6 +324,11 @@ function buildPresets(isSouthern) {
     : ['Winter','Autumn','Summer','Spring'];  // Dec, Sep, Jun, Mar
 
   const list = [];
+
+  // Days
+  list.push({ label: t('preset_today'),              value: 'today',              ...todayRange()              });
+  list.push({ label: t('preset_yesterday'),          value: 'yesterday',          ...yesterdayRange()          });
+  list.push({ label: t('preset_daybeforeyesterday'), value: 'daybeforeyesterday', ...dayBeforeYesterdayRange() });
 
   // Rolling
   list.push({ label:t('preset_last7'),    value:'last7',   suggestB:'last7_prev',   ...rolling(7)   });
@@ -388,6 +410,7 @@ function populatePresetDropdowns() {
 
   // Groups for optgroup
   const groups = [
+    { label: t('optgroup_days'),      values: ['today','yesterday','daybeforeyesterday'] },
     { label: t('optgroup_rolling'),   values: ['last7','last30','last90','last365'] },
     { label: t('optgroup_calendar'),  values: ['thismonth','lastmonth','monthbeforelast','thisyearytd','lytd','lastfullyear'] },
     { label: t('optgroup_quarters'),  fn: p => p.value.startsWith('q') },
@@ -425,6 +448,7 @@ function applyPreset(side, preset) {
   document.getElementById(`${side}-to`).value   = preset.to;
   const sel = document.getElementById(`preset-${side}`);
   if (sel) sel.value = preset.value || '';
+  if (side === 'a') updateGroupWarning();
 }
 
 function clearPreset(side) {
@@ -446,7 +470,20 @@ function onPresetChange(side) {
     document.getElementById(`${side}-from`).value = preset.from;
     document.getElementById(`${side}-to`).value   = preset.to;
   }
-  if (side === 'a') autoSuggestB();
+  if (side === 'a') updateGroupWarning();
+}
+
+function updateGroupWarning() {
+  const group = document.getElementById('group-by').value;
+  const from  = document.getElementById('a-from').value;
+  const to    = document.getElementById('a-to').value;
+  const warn  = document.getElementById('group-warn');
+  if (group === 'none' && from && to) {
+    const days = (new Date(to) - new Date(from)) / 86400000;
+    warn.style.display = days > 7 ? '' : 'none';
+  } else {
+    warn.style.display = 'none';
+  }
 }
 
 function autoSuggestB() {
@@ -663,6 +700,8 @@ function renderChart(a, b) {
     day:     t('chart_period_day'),
     week:    t('chart_period_week'),
     month:   t('chart_period_month'),
+    year:    t('chart_period_year'),
+    none:    t('chart_period_none'),
   }[group] || group;
   const maxLen = Math.max(aData.length, bData ? bData.length : 0);
 
@@ -898,10 +937,12 @@ function formatChartLabel(dateStr, group) {
   if (!dateStr) return '—';
   if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
   if (group === 'hour') return dateStr;
+  if (group === 'none') return dateStr.length > 10 ? dateStr.slice(11) : dateStr;
   const d    = new Date(dateStr + 'T12:00:00');
   const mm   = String(d.getMonth() + 1).padStart(2, '0');
   const dd   = String(d.getDate()).padStart(2, '0');
   const yyyy = d.getFullYear();
+  if (group === 'year')  return String(yyyy);
   if (group === 'month') return `${mm}/${yyyy}`;
   if (group === 'week')  return t('chart_week_label', {date: `${mm}/${dd}/${yyyy}`});
   return `${mm}/${dd}/${yyyy}`;
@@ -911,8 +952,10 @@ function formatPeriodLabel(dateStr, group) {
   if (!dateStr) return '—';
   if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
   if (group === 'hour')    return dateStr;
+  if (group === 'none')    return dateStr;
   const d      = new Date(dateStr + 'T12:00:00');
   const locale = safeLocale;
+  if (group === 'year')  return String(d.getFullYear());
   if (group === 'month') return d.toLocaleDateString(locale, { year:'numeric', month:'short' });
   if (group === 'week')  return t('period_week_of', {date: d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' })});
   return d.toLocaleDateString(locale, { month:'short', day:'numeric', year:'numeric' });

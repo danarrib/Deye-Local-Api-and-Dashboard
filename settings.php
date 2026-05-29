@@ -22,8 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// GET: return current language
-$lang = 'en';
+// GET: return current language (null when no powerplant row exists yet)
+$lang = null;
 if ($db) {
     $result = pg_query($db, "SELECT language FROM powerplant ORDER BY id LIMIT 1");
     $row = $result ? pg_fetch_assoc($result) : false;

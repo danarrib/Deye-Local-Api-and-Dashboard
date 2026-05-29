@@ -3,6 +3,10 @@
     function send_telegram_message($messageText) {
         global $telegram_token, $telegram_chatId;
 
+        if (empty($telegram_token) || empty($telegram_chatId)) {
+            return false;
+        }
+
         $url = "https://api.telegram.org/bot$telegram_token/sendMessage?chat_id=$telegram_chatId&text=" . urlencode($messageText);
 
         $options = [
@@ -29,6 +33,10 @@
 
     function send_telegram_daily_chart($caption = '') {
         global $telegram_token, $telegram_chatId;
+
+        if (empty($telegram_token) || empty($telegram_chatId)) {
+            return ['success' => false, 'error' => 'Telegram not configured'];
+        }
 
         $url = "https://api.telegram.org/bot$telegram_token/sendPhoto";
         

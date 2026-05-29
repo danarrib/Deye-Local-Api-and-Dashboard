@@ -200,6 +200,11 @@
     function send_daily_report($force = false) {
         global $powerplant_timezone;
         global $processStartDateTime;
+        global $telegram_token, $telegram_chatId;
+
+        if (empty($telegram_token) || empty($telegram_chatId)) {
+            return;
+        }
 
         // Get the sunset time for today
         $sunset = get_todays_sunset();

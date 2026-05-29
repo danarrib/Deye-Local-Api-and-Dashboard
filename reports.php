@@ -16,7 +16,7 @@ if ($action === 'config') {
 
 // Validate group
 $group = $_GET['group'] ?? 'day';
-if (!in_array($group, ['hour', 'halfday', 'day', 'week', 'month'])) {
+if (!in_array($group, ['hour', 'halfday', 'day', 'week', 'month', 'year', 'none'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid group.']);
     exit;
@@ -123,7 +123,40 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
             )
         )";
 
-    if ($group === 'hour') {
+    if ($group === 'none') {
+        // Returns one row per 5-minute poll — no time aggregation.
+        // energy_kwh is the instantaneous energy in that interval (power_now * 5/60/1000).
+        // peak_power_w holds the summed power_now across all inverters at that timestamp.
+        $query = "
+            WITH
+            {$local_stats_cte},
+            ts_totals AS (
+                SELECT
+                    date_trunc('minute', local_ts) AS ts,
+                    SUM(power_now) AS total_power,
+                    ROUND(AVG(radiator_temp))::int AS avg_radiator_temp
+                FROM local_stats
+                GROUP BY date_trunc('minute', local_ts)
+            )
+            SELECT
+                TO_CHAR(t.ts, 'YYYY-MM-DD HH24:MI') AS period_start,
+                ROUND((t.total_power * 5.0 / 60.0 / 1000.0)::numeric, 4) AS energy_kwh,
+                ROUND(t.total_power::numeric) AS peak_power_w,
+                w.avg_temp,
+                w.dominant_condition,
+                t.avg_radiator_temp
+            FROM ts_totals t
+            LEFT JOIN LATERAL (
+                SELECT
+                    ROUND(AVG(temperature))::int AS avg_temp,
+                    MODE() WITHIN GROUP (ORDER BY condition) AS dominant_condition
+                FROM weather_info
+                WHERE created_at >= \$2 AND created_at < \$3
+                  AND ABS(EXTRACT(EPOCH FROM (created_at AT TIME ZONE \$1)::timestamp - t.ts)) <= 150
+            ) w ON TRUE
+            ORDER BY t.ts
+        ";
+    } elseif ($group === 'hour') {
         // Returns up to 24 rows, one per hour-of-day (0–23), aggregated across the entire date range.
         // Energy is MAX-MIN per device per day per hour-of-day, then summed across all inverters and days.
         // period_start is formatted as HH:00 text for clear JS labelling.
@@ -257,7 +290,7 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
             ORDER BY CASE pe.period_start WHEN 'morning' THEN 1 ELSE 2 END
         ";
     } else {
-        // day / week / month: bucket by day, roll up to period.
+        // day / week / month / year: bucket by day, roll up to period.
         $period_trunc = $group;
         $period_cast  = 'date';
 
