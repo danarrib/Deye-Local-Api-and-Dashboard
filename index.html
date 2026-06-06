@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title id="page_title">Page title</title>
     <link rel="icon" type="image/x-icon" href="img/favicon.png">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link id="bootstrap-css" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <script>(function(){var t=localStorage.getItem('deye_theme')||( window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-bs-theme',t);})();</script>
     <style>
       .white-text-with-shadow {
@@ -185,7 +185,7 @@
 
             // Update weather info
             if (data.latest_weather_data) {
-              let weatherInfo = `${data.latest_weather_data.condition}, ${data.latest_weather_data.temperature}°C`;
+              let weatherInfo = `${translateCondition(data.latest_weather_data.condition)}, ${data.latest_weather_data.temperature}°C`;
               weatherInfo = weatherInfo.charAt(0).toUpperCase() + weatherInfo.slice(1);
               document.getElementById('weather').innerHTML = weatherInfo;
               document.getElementById('weather-image').src = `img/weather_${data.latest_weather_data.icon}.jpg`;
@@ -352,7 +352,7 @@
         const hasRadiator = radiatorValues.some(v => v !== null);
 
         const datasets = [{
-          label: `${friendlyName} Power (${inverter}) - ${data[data.length - 1].energy_today} kWh`,
+          label: `${friendlyName} - ${data[data.length - 1].energy_today} kWh`,
           fill: true,
           data: values,
           borderColor: borderColor,

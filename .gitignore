@@ -3,7 +3,7 @@ CLAUDE.md
 tasks/
 config.php
 poc/
-scripts/node_modules/
+scripts/
 rebuild.sh
 phpinfo.php
 backups/*.sql.gz

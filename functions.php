@@ -39,6 +39,22 @@
     $powerplant_longitude = $powerplant_settings['longitude'] ?? -46.6;
     $telegram_token = $powerplant_settings['telegram_token'] ?? '';
     $telegram_chatId = $powerplant_settings['telegram_chat_id'] ?? '';
+    $powerplant_language = $powerplant_settings['language'] ?? 'en';
+
+    $_php_lang_file = __DIR__ . '/lang/' . $powerplant_language . '.json';
+    if (!file_exists($_php_lang_file)) {
+        $_php_lang_file = __DIR__ . '/lang/en.json';
+    }
+    $_php_translations = json_decode(file_get_contents($_php_lang_file), true) ?? [];
+
+    function php_t($key, $vars = []) {
+        global $_php_translations;
+        $str = $_php_translations[$key] ?? $key;
+        foreach ($vars as $k => $v) {
+            $str = str_replace('{' . $k . '}', $v, $str);
+        }
+        return $str;
+    }
 
     $inverter_list = load_inverter_list();
 
@@ -227,13 +243,13 @@
                 $total_energy_total += $data['energy_total'];
             }
 
-            $messageText = "Total energy generated today: " . number_format($total_energy_today, 1) . " kWh";
+            $messageText = php_t('tg_daily_energy', ['kwh' => number_format($total_energy_today, 1)]);
 
             $top_daily_energy = getDailyTopEnergy($processStartDateTime);
 
             // If top_daily_energy is greater than total_energy_today, add a message to the telegram message
             if (($top_daily_energy > 0 && $total_energy_today >= $top_daily_energy) || $force === true) {
-                $messageText .= "\n🏆 New daily record! Previous record was " . number_format($top_daily_energy, 1) . " kWh";
+                $messageText .= "\n" . php_t('tg_daily_record', ['kwh' => number_format($top_daily_energy, 1)]);
             }
 
             // If today is the last day of the month
@@ -241,11 +257,11 @@
                 $top_monthly_energy = getMonthlyTopEnergy($processStartDateTime);
                 $energy_this_month = getMonthEnergy($processStartDateTime);
 
-                $messageText .= "\n\nTotal energy generated this month: " . number_format($energy_this_month, 1) . " kWh";
+                $messageText .= "\n\n" . php_t('tg_monthly_energy', ['kwh' => number_format($energy_this_month, 1)]);
 
                 // If top_monthly_energy is greater than energy_this_month, add a message to the telegram message
                 if ($top_monthly_energy > 0 && $energy_this_month >= $top_monthly_energy) {
-                    $messageText .= "\n🏆 New monthly record! Previous record was " . number_format($top_monthly_energy, 1) . " kWh";
+                    $messageText .= "\n" . php_t('tg_monthly_record', ['kwh' => number_format($top_monthly_energy, 1)]);
                 }
             }
 
@@ -347,7 +363,7 @@
     }
 
     function generateTodaysChart() {
-        global $powerplant_name, $powerplant_timezone;
+        global $powerplant_name, $powerplant_timezone, $powerplant_language;
         $date = new DateTime(null, new DateTimeZone($powerplant_timezone));
         $strDate = $date->format('Y-m-d\TH:i:s P');
 
@@ -431,7 +447,17 @@
         $labels_font_size = $canvas_height * 0.017;
         $title_font_size = $canvas_height * 0.025;
         $summary_font_size = $canvas_height * 0.015;
-        $font_name = __DIR__ . '/assets/UbuntuMono-Regular.ttf'; // Path to a TTF font file
+        $font_map = [
+            'ru'    => 'NotoSans.ttf',
+            'hi'    => 'NotoSans.ttf',
+            'zh-CN' => 'NotoSansSC.ttf',
+            'zh-TW' => 'NotoSansTC.ttf',
+            'ja'    => 'NotoSansJP.ttf',
+            'ko'    => 'NotoSansKR.ttf',
+            'he'    => 'NotoSansHebrew.ttf',
+            'ar'    => 'NotoSansArabic.ttf',
+        ];
+        $font_name = __DIR__ . '/assets/' . ($font_map[$powerplant_language] ?? 'UbuntuMono-Regular.ttf');
 
         $numberOfPoints = count($detailed_powerplant_data);
         $chartWidth = $canvas_width - $margins * 2;
@@ -591,16 +617,17 @@
         // Add the chart title - powerplant name and date
         $title = $powerplant_name . " - " . $reference_date->format('Y-m-d');
         imagettftext($img, $title_font_size, 0, $canvas_width / 2 - strlen($title) * 4, $canvas_height * 0.05, $black, $font_name, $title);
-        $xAxisLabel = "Time";
+        $xAxisLabel = php_t('chart_x_axis');
         imagettftext($img, $summary_font_size, 0, $canvas_width / 2 - strlen($xAxisLabel) * 4, $canvas_height * 0.96, $black, $font_name, $xAxisLabel);
-        $yAxisLabel = "Power (W)";
+        $yAxisLabel = php_t('chart_y_axis');
         imagettftext($img, $summary_font_size, 90, $canvas_width * 0.02, $canvas_height / 2 + strlen($yAxisLabel) * 4, $black, $font_name, $yAxisLabel);
 
         // Add the summary information: total energy generated today, peak power and time it occurred, sunrise and sunset times
-        $summary =  "Total Energy:   " . number_format($total_energy_today, 1) . " kWh\n";
-        $summary .= "Peak Power:     " . number_format($peak_power_today, 0) . " W at " . $peak_power_time . "\n";
-        $summary .= "Avg/Peak Rad:   " . ($avg_radiator_temp !== null ? $avg_radiator_temp . "/" . $peak_radiator_temp . " C" : "N/A") . "\n";
-        $summary .= "Sunrise: " . $sunrise->format('H:i') . " | Sunset: " . $sunset->format('H:i') . "\n";
+        $rad_str = $avg_radiator_temp !== null ? $avg_radiator_temp . "/" . $peak_radiator_temp . " C" : php_t('chart_summary_na');
+        $summary  = php_t('chart_summary_energy',  ['kwh'     => number_format($total_energy_today, 1)]) . "\n";
+        $summary .= php_t('chart_summary_peak',    ['power'   => number_format($peak_power_today, 0), 'time' => $peak_power_time]) . "\n";
+        $summary .= php_t('chart_summary_radiator',['temps'   => $rad_str]) . "\n";
+        $summary .= php_t('chart_summary_sun',     ['sunrise' => $sunrise->format('H:i'), 'sunset' => $sunset->format('H:i')]) . "\n";
 
         // Get the text size to draw a box around it
         $bbox = imagettfbbox($summary_font_size, 0, $font_name, $summary);

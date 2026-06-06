@@ -3,7 +3,7 @@ require_once __DIR__ . '/functions.php';
 
 header('Content-Type: application/json');
 
-$allowed_languages = ['en', 'pt-BR', 'es'];
+$allowed_languages = ['en', 'pt-BR', 'es', 'de', 'fr', 'it', 'nl', 'tr', 'ru', 'zh-CN', 'zh-TW', 'ko', 'ja', 'he', 'ar', 'hi'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $language = trim($_POST['language'] ?? '');

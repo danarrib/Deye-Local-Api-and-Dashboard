@@ -26,10 +26,14 @@ This is what is already working:
   - [x] Navigate to any previous date using prev/next buttons or a date picker
   - [x] Weather condition change indicators overlaid on the power chart (emoji + dashed line at each transition)
 - [x] Send a daily report to a Telegram Group (using a Telegram Bot)
-- [x] Multi-language UI (English, Brazilian Portuguese, Spanish) — language is stored system-wide and switchable from a footer dropdown on every page
+- [x] Multi-language UI (16 languages: English, Português (Brasil), Español, Deutsch, Français, Italiano, Nederlands, Türkçe, Русский, 中文简体, 中文繁體, 日本語, 한국어, עברית, العربية, हिन्दी) — language stored system-wide, switchable from any page; RTL layout for Arabic and Hebrew; non-Latin chart labels use per-script Noto Sans fonts
 - [x] SolarmanV5 protocol integration — richer data via TCP port 8899 (Modbus), including inverter temperature and per-panel voltage, current, power, and energy
 
 
+
+## Compatible hardware
+
+See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for the full list of tested and likely-compatible inverter models. In general, any Solarman-compatible Deye micro-inverter with a Wi-Fi logging stick should work.
 
 ## How to set up
 
@@ -105,7 +109,7 @@ There are three ways to use: the Dashboard, the Reports page, and the API:
 ### Dashboard
 Open an Internet Browser and open `http://localhost:8080/`
 
-<img alt="Dashboard screenshot" src="docs/dashboard.png" />
+<img alt="Dashboard screenshot" src="docs/screenshots/dashboard.png" />
 
 ### Reports
 Open `http://localhost:8080/reports.html` for the report builder.
@@ -119,7 +123,7 @@ The reports page lets you analyse historical production data with flexible group
 - **Inverter selection:** when multiple inverters are configured, choose which ones to include per range
 - **Summary cards:** total energy, daily average, peak power, average temperature, and dominant weather condition — with percentage deltas when comparing two ranges
 
-<img alt="Reports screenshot" src="docs/reports.png" />
+<img alt="Reports screenshot" src="docs/screenshots/reports.png" />
 
 ### API
 Open an Internet Browser and open `http://localhost:8080/deye.php?user=admin&password=admin&ipaddress=192.168.15.201`
@@ -190,31 +194,3 @@ This program does exactly that: Parses the `status.html` file and get the follow
 * UI uses [Bootstrap](https://github.com/twbs/bootstrap) and [Chart.js](https://github.com/chartjs/Chart.js) libraries only
 * No fancy frameworks to bloat the application. No package managers, nothing. Just plain HTML, JavaScript, and PHP. This project is intended to be simple.
 
-## Development roadmap
-Here's a list of new features I wish to add to this project in the future:
-
-- [x] Get data from individual PV inputs (each individual solar panel of each micro-inverter)
-  - Voltage (V)
-  - Current (A)
-  - Power (W)
-  - Energy Today (kWh)
-  - Energy Total (kWh) *(PV3/PV4 lifetime total registers not yet confirmed — stored as NULL)*
-- [x] Get Inverter Temperature (Celsius)
-- [x] Get Weather Data (ambient temperature, humidity, wind speed and direction, condition like clear, cloudy, raining, snowing, etc)
-- [x] Show weather condition changes as emoji icons on the power chart
-- [x] Configuration UI (admin panel with setup wizard, settings management, and inverter CRUD)
-- [x] Make it work as a Docker compose package, to make set up easier for everyone
-- [x] Support Dark mode
-- [x] Allow user to navigate to previous dates on the dashboard (currently only shows current day)
-- [x] Report builder
-  - [x] Filter by arbitrary date ranges
-  - [x] Group/aggregate by hour-of-day, morning/afternoon, day, week, month
-  - [x] Cross-reference production data with weather data
-  - [x] Summary statistics (totals, averages, peaks)
-  - [x] Compare two date ranges side-by-side with delta indicators
-  - [x] Per-range time-of-day filters and inverter selection
-  - [x] Multiple chart types: bars, lines, doughnut
-- [x] Multi-language support (English, Português Brasileiro, Español)
-  - Language stored in the database, applies system-wide
-  - Switchable via a dropdown in the footer of every page
-  - Easily extensible: add `lang/xx.json` and one line in `i18n.js`

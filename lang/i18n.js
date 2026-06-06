@@ -1,7 +1,22 @@
+const RTL_LANGUAGES = new Set(['he', 'ar']);
+
 const SUPPORTED_LANGUAGES = [
   { code: 'en',    label: 'English' },
   { code: 'pt-BR', label: 'Português (Brasil)' },
   { code: 'es',    label: 'Español' },
+  { code: 'de',    label: 'Deutsch' },
+  { code: 'fr',    label: 'Français' },
+  { code: 'it',    label: 'Italiano' },
+  { code: 'nl',    label: 'Nederlands' },
+  { code: 'tr',    label: 'Türkçe' },
+  { code: 'ru',    label: 'Русский' },
+  { code: 'zh-CN', label: '中文（简体）' },
+  { code: 'zh-TW', label: '中文（繁體）' },
+  { code: 'ko',    label: '한국어' },
+  { code: 'ja',    label: '日本語' },
+  { code: 'he',    label: 'עברית' },
+  { code: 'ar',    label: 'العربية' },
+  { code: 'hi',    label: 'हिन्दी' },
 ];
 
 let _translations = {};
@@ -32,6 +47,18 @@ async function i18nInit(basePath = '') {
     _translations = await r.json();
   } catch(e) { _translations = {}; }
 
+  const isRTL = RTL_LANGUAGES.has(_lang);
+  document.documentElement.lang = _lang;
+  document.documentElement.dir  = isRTL ? 'rtl' : 'ltr';
+
+  const bsLink = document.getElementById('bootstrap-css');
+  if (bsLink) {
+    bsLink.href = isRTL
+      ? 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css'
+      : 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
+    bsLink.removeAttribute('integrity');
+  }
+
   applyTranslations();
   _renderLangSwitchers();
 }
@@ -44,6 +71,13 @@ function t(key, vars) {
     }
   }
   return str;
+}
+
+function translateCondition(condition) {
+  if (!condition) return '';
+  const key = 'weather_cond_' + condition.toLowerCase().replace(/ /g, '_');
+  const translated = t(key);
+  return translated !== key ? translated : condition;
 }
 
 function applyTranslations() {
