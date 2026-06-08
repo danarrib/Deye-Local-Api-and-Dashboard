@@ -19,7 +19,6 @@
   "chart_total_power": "Puissance totale",
   "chart_radiator_temp": "Temp. radiateur",
   "language_label": "Langue",
-
   "nav_reports": "Rapports",
   "range_a": "Plage A",
   "range_b": "Plage B",
@@ -42,6 +41,7 @@
   "group_month": "Mois",
   "group_year": "Année",
   "group_none": "Aucun",
+  "group_pvinput": "Par entrée PV",
   "chart_bars": "Barres",
   "chart_lines": "Lignes",
   "chart_doughnut": "Anneau",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Sélectionner au moins un onduleur pour la Plage B.",
   "alert_server_error": "Erreur serveur.",
   "alert_server_unreachable": "Impossible d'atteindre le serveur.",
-
   "admin_go_dashboard": "Tableau de bord",
   "admin_logout": "Déconnexion",
   "admin_db_setup_title": "Configuration de la base de données",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 entrée trouvée",
   "admin_log_entries_found": "{count} entrées trouvées",
   "admin_log_error": "Erreur : {error}",
-
   "weather_cond_clear_sky": "Ciel dégagé",
   "weather_cond_mainly_clear": "Principalement dégagé",
   "weather_cond_partly_cloudy": "Partiellement nuageux",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Orage modéré",
   "weather_cond_heavy_thunderstorm": "Orage violent",
   "weather_cond_unknown": "Inconnu",
-
   "chart_x_axis": "Heure",
   "chart_y_axis": "Puissance (W)",
   "chart_summary_energy": "Energie Tot.:   {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Rad. Moy/Max:   {temps}",
   "chart_summary_na": "N/D",
   "chart_summary_sun": "Lever: {sunrise} | Coucher: {sunset}",
-
   "tg_daily_energy": "Énergie produite aujourd'hui : {kwh} kWh",
   "tg_daily_record": "🏆 Nouveau record journalier ! Le précédent record était {kwh} kWh",
   "tg_monthly_energy": "Énergie produite ce mois-ci : {kwh} kWh",

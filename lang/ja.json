@@ -19,7 +19,6 @@
   "chart_total_power": "総電力",
   "chart_radiator_temp": "ラジエーター温度",
   "language_label": "言語",
-
   "nav_reports": "レポート",
   "range_a": "範囲 A",
   "range_b": "範囲 B",
@@ -42,6 +41,7 @@
   "group_month": "月",
   "group_year": "年",
   "group_none": "なし",
+  "group_pvinput": "PV入力別",
   "chart_bars": "棒グラフ",
   "chart_lines": "折れ線",
   "chart_doughnut": "ドーナツ",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "範囲 B のインバーターを少なくとも1台選択してください。",
   "alert_server_error": "サーバーエラー。",
   "alert_server_unreachable": "サーバーに接続できません。",
-
   "admin_go_dashboard": "ダッシュボード",
   "admin_logout": "ログアウト",
   "admin_db_setup_title": "データベース設定",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1件のエントリが見つかりました",
   "admin_log_entries_found": "{count}件のエントリが見つかりました",
   "admin_log_error": "エラー: {error}",
-
   "weather_cond_clear_sky": "快晴",
   "weather_cond_mainly_clear": "晴れ",
   "weather_cond_partly_cloudy": "薄曇り",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "普通の雷雨",
   "weather_cond_heavy_thunderstorm": "激しい雷雨",
   "weather_cond_unknown": "不明",
-
   "chart_x_axis": "時刻",
   "chart_y_axis": "電力 (W)",
   "chart_summary_energy": "電力量:   {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "ラジエーター: {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "日の出: {sunrise} | 日の入り: {sunset}",
-
   "tg_daily_energy": "本日の発電量：{kwh} kWh",
   "tg_daily_record": "🏆 新しい日間記録！前の記録は {kwh} kWh でした",
   "tg_monthly_energy": "今月の発電量：{kwh} kWh",

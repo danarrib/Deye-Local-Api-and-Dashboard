@@ -19,7 +19,6 @@
   "chart_total_power": "Gesamtleistung",
   "chart_radiator_temp": "Kühlkörpertemperatur",
   "language_label": "Sprache",
-
   "nav_reports": "Berichte",
   "range_a": "Bereich A",
   "range_b": "Bereich B",
@@ -42,6 +41,7 @@
   "group_month": "Monat",
   "group_year": "Jahr",
   "group_none": "Keine",
+  "group_pvinput": "Pro PV-Eingang",
   "chart_bars": "Balken",
   "chart_lines": "Linien",
   "chart_doughnut": "Ringdiagramm",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Mindestens einen Wechselrichter für Bereich B auswählen.",
   "alert_server_error": "Serverfehler.",
   "alert_server_unreachable": "Server nicht erreichbar.",
-
   "admin_go_dashboard": "Dashboard",
   "admin_logout": "Abmelden",
   "admin_db_setup_title": "Datenbankeinrichtung",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 Eintrag gefunden",
   "admin_log_entries_found": "{count} Einträge gefunden",
   "admin_log_error": "Fehler: {error}",
-
   "weather_cond_clear_sky": "Klarer Himmel",
   "weather_cond_mainly_clear": "Überwiegend klar",
   "weather_cond_partly_cloudy": "Teilweise bewölkt",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Mäßiges Gewitter",
   "weather_cond_heavy_thunderstorm": "Heftiges Gewitter",
   "weather_cond_unknown": "Unbekannt",
-
   "chart_x_axis": "Zeit",
   "chart_y_axis": "Leistung (W)",
   "chart_summary_energy": "Ges. Energie:   {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Kuehler D/M:    {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "Aufgang: {sunrise} | Untergang: {sunset}",
-
   "tg_daily_energy": "Heute erzeugte Energie: {kwh} kWh",
   "tg_daily_record": "🏆 Neuer Tagesrekord! Vorheriger Rekord war {kwh} kWh",
   "tg_monthly_energy": "Diesen Monat erzeugte Energie: {kwh} kWh",

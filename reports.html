@@ -105,6 +105,7 @@
             <option value="week" data-i18n="group_week">Week</option>
             <option value="month" data-i18n="group_month">Month</option>
             <option value="year" data-i18n="group_year">Year</option>
+            <option value="pvinput" data-i18n="group_pvinput">Per PV Input</option>
           </select>
         </div>
         <div class="col-auto">
@@ -702,10 +703,11 @@ function renderChart(a, b) {
     month:   t('chart_period_month'),
     year:    t('chart_period_year'),
     none:    t('chart_period_none'),
+    pvinput: t('group_pvinput'),
   }[group] || group;
   const maxLen = Math.max(aData.length, bData ? bData.length : 0);
 
-  const useRelative = bData && bData.length === aData.length && !['hour','halfday'].includes(group);
+  const useRelative = bData && bData.length === aData.length && !['hour','halfday','pvinput'].includes(group);
 
   const labels = Array.from({ length: maxLen }, (_, i) => {
     if (useRelative) return `${groupLabel} ${i + 1}`;
@@ -936,7 +938,7 @@ function renderTable(a, b) {
 function formatChartLabel(dateStr, group) {
   if (!dateStr) return '—';
   if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
-  if (group === 'hour') return dateStr;
+  if (group === 'hour' || group === 'pvinput') return dateStr;
   if (group === 'none') return dateStr.length > 10 ? dateStr.slice(11) : dateStr;
   const d    = new Date(dateStr + 'T12:00:00');
   const mm   = String(d.getMonth() + 1).padStart(2, '0');
@@ -951,7 +953,7 @@ function formatChartLabel(dateStr, group) {
 function formatPeriodLabel(dateStr, group) {
   if (!dateStr) return '—';
   if (group === 'halfday') return dateStr === 'morning' ? t('period_morning') : t('period_afternoon');
-  if (group === 'hour')    return dateStr;
+  if (group === 'hour' || group === 'pvinput') return dateStr;
   if (group === 'none')    return dateStr;
   const d      = new Date(dateStr + 'T12:00:00');
   const locale = safeLocale;

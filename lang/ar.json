@@ -19,7 +19,6 @@
   "chart_total_power": "إجمالي الطاقة",
   "chart_radiator_temp": "درجة حرارة المشعاع",
   "language_label": "اللغة",
-
   "nav_reports": "تقارير",
   "range_a": "النطاق A",
   "range_b": "النطاق B",
@@ -42,6 +41,7 @@
   "group_month": "شهر",
   "group_year": "سنة",
   "group_none": "لا شيء",
+  "group_pvinput": "حسب مدخل PV",
   "chart_bars": "أعمدة",
   "chart_lines": "خطوط",
   "chart_doughnut": "دونات",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "اختر عاكساً واحداً على الأقل للنطاق B.",
   "alert_server_error": "خطأ في الخادم.",
   "alert_server_unreachable": "تعذر الوصول إلى الخادم.",
-
   "admin_go_dashboard": "لوحة التحكم",
   "admin_logout": "تسجيل الخروج",
   "admin_db_setup_title": "إعداد قاعدة البيانات",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "تم العثور على إدخال 1",
   "admin_log_entries_found": "تم العثور على {count} إدخالات",
   "admin_log_error": "خطأ: {error}",
-
   "weather_cond_clear_sky": "صحو",
   "weather_cond_mainly_clear": "صحو في معظمه",
   "weather_cond_partly_cloudy": "غائم جزئياً",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "عاصفة رعدية متوسطة",
   "weather_cond_heavy_thunderstorm": "عاصفة رعدية شديدة",
   "weather_cond_unknown": "غير معروف",
-
   "chart_x_axis": "وقت",
   "chart_y_axis": "طاقة (W)",
   "chart_summary_energy": "طاقة: {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "مشعاع: {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "شروق: {sunrise} | غروب: {sunset}",
-
   "tg_daily_energy": "الطاقة المنتجة اليوم: {kwh} kWh",
   "tg_daily_record": "🏆 رقم قياسي يومي جديد! كان الرقم السابق {kwh} kWh",
   "tg_monthly_energy": "الطاقة المنتجة هذا الشهر: {kwh} kWh",

@@ -327,16 +327,12 @@
       function updateInverterChart(data, inverter, color, friendlyName) {
         let ctx = document.getElementById(`inverter_${inverter}`);
 
-        let chartStatus = Chart.getChart(`inverter_${inverter}`); // <canvas> id
+        let chartStatus = Chart.getChart(`inverter_${inverter}`);
         if (chartStatus != undefined) {
           chartStatus.destroy();
         }
 
-        let borderColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-        let backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
-
         let labels = data.map(d => d.time);
-        // Convert the times from UTC to local
         labels = labels.map(l => {
           let date = new Date(l);
           return date.toLocaleTimeString(navigator.language, {
@@ -345,25 +341,69 @@
           });
         });
 
-        let values = data.map(d => d.power_now);
         let radiatorValues = data.map(d =>
           d.radiator_temp !== null && d.radiator_temp !== '' && d.radiator_temp !== undefined ? parseFloat(d.radiator_temp) : null
         );
         const hasRadiator = radiatorValues.some(v => v !== null);
 
-        const datasets = [{
-          label: `${friendlyName} - ${data[data.length - 1].energy_today} kWh`,
-          fill: true,
-          data: values,
-          borderColor: borderColor,
-          backgroundColor: backgroundColor,
-          borderWidth: 1,
-          tension: 0.5,
-          yAxisID: 'y',
-        }];
+        const lastEnergy = [...data].reverse().find(d => d.energy_today != null)?.energy_today ?? '?';
+        const hasPvInputs = data.some(d => d.pv_inputs && Object.keys(d.pv_inputs).length > 0);
+
+        let datasets;
+        let chartTitle = null;
+        let yStacked = false;
+
+        if (hasPvInputs) {
+          const pvNumbers = [...new Set(
+            data.flatMap(d => d.pv_inputs ? Object.keys(d.pv_inputs).map(Number) : [])
+          )].sort((a, b) => a - b);
+
+          const pvColors = [
+            [255, 159,  64],  // PV1: orange
+            [ 54, 162, 235],  // PV2: blue
+            [ 75, 192, 192],  // PV3: teal
+            [153, 102, 255],  // PV4: purple
+          ];
+
+          datasets = pvNumbers.map((pvNum, idx) => {
+            const c = pvColors[idx % pvColors.length];
+            return {
+              label: `PV${pvNum}`,
+              fill: idx === 0 ? 'origin' : '-1',
+              data: data.map(d => d.pv_inputs ? (d.pv_inputs[pvNum] ?? null) : null),
+              borderColor: `rgb(${c[0]}, ${c[1]}, ${c[2]})`,
+              backgroundColor: `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.4)`,
+              borderWidth: 1,
+              tension: 0.5,
+              spanGaps: true,
+              pointRadius: 0,
+              yAxisID: 'y',
+              stack: 'pv',
+              order: 1,
+            };
+          });
+
+          chartTitle = `${friendlyName} — ${lastEnergy} kWh`;
+          yStacked = true;
+        } else {
+          let borderColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+          let backgroundColor = `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
+          datasets = [{
+            label: `${friendlyName} - ${lastEnergy} kWh`,
+            fill: true,
+            data: data.map(d => d.power_now),
+            borderColor: borderColor,
+            backgroundColor: backgroundColor,
+            borderWidth: 1,
+            tension: 0.5,
+            pointRadius: 0,
+            yAxisID: 'y',
+            order: 1,
+          }];
+        }
 
         if (hasRadiator) {
-          datasets.push({
+          datasets.unshift({
             label: t('chart_radiator_temp'),
             data: radiatorValues,
             borderColor: 'rgb(255, 99, 132)',
@@ -372,8 +412,9 @@
             tension: 0.5,
             fill: false,
             spanGaps: true,
-            pointRadius: 2,
+            pointRadius: 0,
             yAxisID: 'y2',
+            order: 2,
           });
         }
 
@@ -381,8 +422,14 @@
           type: 'line',
           data: { labels, datasets },
           options: {
+            plugins: {
+              ...(chartTitle ? { title: { display: true, text: chartTitle } } : {}),
+            },
             scales: {
-              y: { beginAtZero: true },
+              y: {
+                beginAtZero: true,
+                stacked: yStacked,
+              },
               ...(hasRadiator ? {
                 y2: {
                   position: 'right',
@@ -483,6 +530,7 @@
           backgroundColor: 'rgba(54, 162, 235, 0.2)',
           borderWidth: 1,
           tension: 0.5,
+          pointRadius: 0,
           yAxisID: 'y',
         }];
 
@@ -496,7 +544,7 @@
             tension: 0.5,
             fill: false,
             spanGaps: true,
-            pointRadius: 2,
+            pointRadius: 0,
             yAxisID: 'y2',
           });
         }

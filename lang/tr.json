@@ -19,7 +19,6 @@
   "chart_total_power": "Toplam Güç",
   "chart_radiator_temp": "Radyatör sıcaklığı",
   "language_label": "Dil",
-
   "nav_reports": "Raporlar",
   "range_a": "Aralık A",
   "range_b": "Aralık B",
@@ -42,6 +41,7 @@
   "group_month": "Ay",
   "group_year": "Yıl",
   "group_none": "Yok",
+  "group_pvinput": "PV Girişine Göre",
   "chart_bars": "Çubuklar",
   "chart_lines": "Çizgiler",
   "chart_doughnut": "Halka",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Aralık B için en az bir invertör seçin.",
   "alert_server_error": "Sunucu hatası.",
   "alert_server_unreachable": "Sunucuya ulaşılamıyor.",
-
   "admin_go_dashboard": "Gösterge paneli",
   "admin_logout": "Çıkış yap",
   "admin_db_setup_title": "Veritabanı kurulumu",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 kayıt bulundu",
   "admin_log_entries_found": "{count} kayıt bulundu",
   "admin_log_error": "Hata: {error}",
-
   "weather_cond_clear_sky": "Açık gökyüzü",
   "weather_cond_mainly_clear": "Büyük ölçüde açık",
   "weather_cond_partly_cloudy": "Parçalı bulutlu",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Orta gök gürültülü fırtına",
   "weather_cond_heavy_thunderstorm": "Şiddetli gök gürültülü fırtına",
   "weather_cond_unknown": "Bilinmiyor",
-
   "chart_x_axis": "Saat",
   "chart_y_axis": "Guc (W)",
   "chart_summary_energy": "Top. Enerji:    {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Rad. Ort/Maks:  {temps}",
   "chart_summary_na": "Yok",
   "chart_summary_sun": "Dogus: {sunrise} | Batis: {sunset}",
-
   "tg_daily_energy": "Bugün üretilen enerji: {kwh} kWh",
   "tg_daily_record": "🏆 Yeni günlük rekoru! Önceki rekor {kwh} kWh idi",
   "tg_monthly_energy": "Bu ay üretilen enerji: {kwh} kWh",

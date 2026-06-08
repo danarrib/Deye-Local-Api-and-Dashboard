@@ -292,7 +292,8 @@
         interval '5 minutes'
     ) AS interval_start
 )
-SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.energy_today, pvsd.radiator_temp, idet.friendly_name, idet.order
+SELECT ti.interval_start as time, idet.device_sn, pvsd.power_now, pvsd.energy_today, pvsd.radiator_temp, idet.friendly_name, idet.order,
+  (SELECT json_object_agg(pv_number::text, power ORDER BY pv_number) FROM pvinputstats WHERE pvstatsdetail_id = pvsd.id) AS pv_inputs
 FROM inverters idet
 left join time_intervals ti ON true
 LEFT JOIN LATERAL (
@@ -317,6 +318,7 @@ ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
         foreach ($data as &$row) {
             $interval_start_utc = new DateTime($row['time'], new DateTimeZone('UTC'));
             $row['time'] = $interval_start_utc->format('Y-m-d\TH:i:s\Z');
+            $row['pv_inputs'] = !empty($row['pv_inputs']) ? json_decode($row['pv_inputs'], true) : null;
         }
 
         return $data;

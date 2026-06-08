@@ -19,7 +19,6 @@
   "chart_total_power": "Общая мощность",
   "chart_radiator_temp": "Темп. радиатора",
   "language_label": "Язык",
-
   "nav_reports": "Отчёты",
   "range_a": "Диапазон A",
   "range_b": "Диапазон B",
@@ -42,6 +41,7 @@
   "group_month": "Месяц",
   "group_year": "Год",
   "group_none": "Нет",
+  "group_pvinput": "По PV-входу",
   "chart_bars": "Столбцы",
   "chart_lines": "Линии",
   "chart_doughnut": "Кольцо",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Выберите хотя бы один инвертор для Диапазона B.",
   "alert_server_error": "Ошибка сервера.",
   "alert_server_unreachable": "Сервер недоступен.",
-
   "admin_go_dashboard": "Панель управления",
   "admin_logout": "Выйти",
   "admin_db_setup_title": "Настройка базы данных",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "Найдена 1 запись",
   "admin_log_entries_found": "Найдено {count} записей",
   "admin_log_error": "Ошибка: {error}",
-
   "weather_cond_clear_sky": "Ясно",
   "weather_cond_mainly_clear": "Преимущественно ясно",
   "weather_cond_partly_cloudy": "Переменная облачность",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Умеренная гроза",
   "weather_cond_heavy_thunderstorm": "Сильная гроза",
   "weather_cond_unknown": "Неизвестно",
-
   "chart_x_axis": "Время",
   "chart_y_axis": "Мощность (W)",
   "chart_summary_energy": "Энергия:        {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Рад. Ср/Макс:   {temps}",
   "chart_summary_na": "Н/Д",
   "chart_summary_sun": "Восход: {sunrise} | Закат: {sunset}",
-
   "tg_daily_energy": "Выработано сегодня: {kwh} кВт·ч",
   "tg_daily_record": "🏆 Новый дневной рекорд! Предыдущий рекорд составлял {kwh} кВт·ч",
   "tg_monthly_energy": "Выработано в этом месяце: {kwh} кВт·ч",

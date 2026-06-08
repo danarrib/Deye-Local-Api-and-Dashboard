@@ -19,7 +19,6 @@
   "chart_total_power": "總功率",
   "chart_radiator_temp": "散熱器溫度",
   "language_label": "語言",
-
   "nav_reports": "報表",
   "range_a": "範圍 A",
   "range_b": "範圍 B",
@@ -42,6 +41,7 @@
   "group_month": "月",
   "group_year": "年",
   "group_none": "無",
+  "group_pvinput": "按PV輸入",
   "chart_bars": "長條圖",
   "chart_lines": "折線圖",
   "chart_doughnut": "圓環圖",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "請為範圍 B 選擇至少一台逆變器。",
   "alert_server_error": "伺服器錯誤。",
   "alert_server_unreachable": "無法連線至伺服器。",
-
   "admin_go_dashboard": "儀表板",
   "admin_logout": "登出",
   "admin_db_setup_title": "資料庫設定",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "找到 1 筆記錄",
   "admin_log_entries_found": "找到 {count} 筆記錄",
   "admin_log_error": "錯誤：{error}",
-
   "weather_cond_clear_sky": "晴天",
   "weather_cond_mainly_clear": "大部晴天",
   "weather_cond_partly_cloudy": "局部多雲",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "中雷暴",
   "weather_cond_heavy_thunderstorm": "強雷暴",
   "weather_cond_unknown": "未知",
-
   "chart_x_axis": "時間",
   "chart_y_axis": "功率 (W)",
   "chart_summary_energy": "總電量:  {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "散熱器:  {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "日出: {sunrise} | 日落: {sunset}",
-
   "tg_daily_energy": "今日發電量：{kwh} kWh",
   "tg_daily_record": "🏆 新單日紀錄！上次紀錄為 {kwh} kWh",
   "tg_monthly_energy": "本月發電量：{kwh} kWh",

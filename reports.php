@@ -16,7 +16,7 @@ if ($action === 'config') {
 
 // Validate group
 $group = $_GET['group'] ?? 'day';
-if (!in_array($group, ['hour', 'halfday', 'day', 'week', 'month', 'year', 'none'])) {
+if (!in_array($group, ['hour', 'halfday', 'day', 'week', 'month', 'year', 'none', 'pvinput'])) {
     http_response_code(400);
     echo json_encode(['error' => 'Invalid group.']);
     exit;
@@ -93,10 +93,12 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
     $params = [$tz, $start_utc, $end_utc, $time_from, $time_to];
 
     $inv_clause = '';
+    $pv_inv_clause = '';
     if (!empty($inverters)) {
         $literal  = '{' . implode(',', array_map(fn($s) => '"' . pg_escape_string($db, $s) . '"', $inverters)) . '}';
         $params[] = $literal;
-        $inv_clause = "\n              AND device_sn = ANY(\$" . count($params) . "::text[])";
+        $inv_clause    = "\n              AND device_sn = ANY(\$" . count($params) . "::text[])";
+        $pv_inv_clause = "\n              AND pvs.device_sn = ANY(\$" . count($params) . "::text[])";
     }
 
     // All interpolated values below come from a validated whitelist — safe to use directly in SQL.
@@ -288,6 +290,63 @@ function fetch_report_data($from_date, $to_date, $group, $tz, $inverters = [], $
             LEFT JOIN period_weather pw ON pe.period_start = pw.period_start
             LEFT JOIN period_radiator pr ON pe.period_start = pr.period_start
             ORDER BY CASE pe.period_start WHEN 'morning' THEN 1 ELSE 2 END
+        ";
+    } elseif ($group === 'pvinput') {
+        // Returns one row per PV input number, aggregated across the entire date range.
+        // Energy is MAX-MIN per device per day per pv_number, summed across all days.
+        $query = "
+            WITH
+            local_pv AS (
+                SELECT
+                    pvs.device_sn,
+                    pv.pv_number,
+                    (pvs.created_at AT TIME ZONE \$1)::date AS local_day,
+                    pv.energy_today,
+                    pv.power
+                FROM pvinputstats pv
+                JOIN pvstatsdetail pvs ON pv.pvstatsdetail_id = pvs.id
+                WHERE pvs.created_at >= \$2 AND pvs.created_at < \$3{$pv_inv_clause}
+                AND (
+                    CASE WHEN \$4::time <= \$5::time
+                        THEN date_trunc('minute', (pvs.created_at AT TIME ZONE \$1)::timestamp)::time BETWEEN \$4::time AND \$5::time
+                        ELSE date_trunc('minute', (pvs.created_at AT TIME ZONE \$1)::timestamp)::time >= \$4::time
+                          OR date_trunc('minute', (pvs.created_at AT TIME ZONE \$1)::timestamp)::time <= \$5::time
+                    END
+                )
+            ),
+            daily_energy AS (
+                SELECT
+                    pv_number,
+                    local_day,
+                    device_sn,
+                    GREATEST(0, MAX(energy_today) - MIN(energy_today)) AS kwh
+                FROM local_pv
+                GROUP BY pv_number, local_day, device_sn
+            ),
+            period_energy AS (
+                SELECT
+                    pv_number,
+                    ROUND(SUM(kwh)::numeric, 2) AS energy_kwh
+                FROM daily_energy
+                GROUP BY pv_number
+            ),
+            period_peak AS (
+                SELECT
+                    pv_number,
+                    ROUND(MAX(power)::numeric) AS peak_power_w
+                FROM local_pv
+                GROUP BY pv_number
+            )
+            SELECT
+                'PV' || pe.pv_number AS period_start,
+                pe.energy_kwh,
+                pp.peak_power_w,
+                NULL::int AS avg_temp,
+                NULL::text AS dominant_condition,
+                NULL::int AS avg_radiator_temp
+            FROM period_energy pe
+            LEFT JOIN period_peak pp ON pe.pv_number = pp.pv_number
+            ORDER BY pe.pv_number
         ";
     } else {
         // day / week / month / year: bucket by day, roll up to period.

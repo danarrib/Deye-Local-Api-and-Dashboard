@@ -19,7 +19,6 @@
   "chart_total_power": "הספק כולל",
   "chart_radiator_temp": "טמפ' רדיאטור",
   "language_label": "שפה",
-
   "nav_reports": "דוחות",
   "range_a": "טווח A",
   "range_b": "טווח B",
@@ -42,6 +41,7 @@
   "group_month": "חודש",
   "group_year": "שנה",
   "group_none": "ללא",
+  "group_pvinput": "לפי כניסת PV",
   "chart_bars": "עמודות",
   "chart_lines": "קווים",
   "chart_doughnut": "דונאט",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "בחר לפחות ממיר אחד עבור טווח B.",
   "alert_server_error": "שגיאת שרת.",
   "alert_server_unreachable": "לא ניתן להגיע לשרת.",
-
   "admin_go_dashboard": "לוח בקרה",
   "admin_logout": "התנתק",
   "admin_db_setup_title": "הגדרת מסד נתונים",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "נמצאה רשומה 1",
   "admin_log_entries_found": "נמצאו {count} רשומות",
   "admin_log_error": "שגיאה: {error}",
-
   "weather_cond_clear_sky": "שמיים בהירים",
   "weather_cond_mainly_clear": "בהיר ברובו",
   "weather_cond_partly_cloudy": "מעונן חלקית",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "סופת רעמים מתונה",
   "weather_cond_heavy_thunderstorm": "סופת רעמים חזקה",
   "weather_cond_unknown": "לא ידוע",
-
   "chart_x_axis": "זמן",
   "chart_y_axis": "הספק (W)",
   "chart_summary_energy": "אנרגיה: {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "רדיאטור: {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "זריחה: {sunrise} | שקיעה: {sunset}",
-
   "tg_daily_energy": "אנרגיה שנוצרה היום: {kwh} kWh",
   "tg_daily_record": "🏆 שיא יומי חדש! השיא הקודם היה {kwh} kWh",
   "tg_monthly_energy": "אנרגיה שנוצרה החודש: {kwh} kWh",

@@ -19,7 +19,6 @@
   "chart_total_power": "कुल शक्ति",
   "chart_radiator_temp": "रेडिएटर तापमान",
   "language_label": "भाषा",
-
   "nav_reports": "रिपोर्ट",
   "range_a": "श्रेणी A",
   "range_b": "श्रेणी B",
@@ -42,6 +41,7 @@
   "group_month": "माह",
   "group_year": "वर्ष",
   "group_none": "कोई नहीं",
+  "group_pvinput": "PV इनपुट अनुसार",
   "chart_bars": "बार",
   "chart_lines": "रेखाएं",
   "chart_doughnut": "डोनट",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "श्रेणी B के लिए कम से कम एक इन्वर्टर चुनें।",
   "alert_server_error": "सर्वर त्रुटि।",
   "alert_server_unreachable": "सर्वर तक पहुंचा नहीं जा सका।",
-
   "admin_go_dashboard": "डैशबोर्ड",
   "admin_logout": "लॉगआउट",
   "admin_db_setup_title": "डेटाबेस सेटअप",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 प्रविष्टि मिली",
   "admin_log_entries_found": "{count} प्रविष्टियां मिलीं",
   "admin_log_error": "त्रुटि: {error}",
-
   "weather_cond_clear_sky": "साफ आसमान",
   "weather_cond_mainly_clear": "ज्यादातर साफ",
   "weather_cond_partly_cloudy": "आंशिक बादल",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "मध्यम तूफान",
   "weather_cond_heavy_thunderstorm": "भारी तूफान",
   "weather_cond_unknown": "अज्ञात",
-
   "chart_x_axis": "समय",
   "chart_y_axis": "शक्ति (W)",
   "chart_summary_energy": "ऊर्जा:          {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "रेड. औ/अधि:     {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "उदय: {sunrise} | अस्त: {sunset}",
-
   "tg_daily_energy": "आज उत्पादित ऊर्जा: {kwh} kWh",
   "tg_daily_record": "🏆 नया दैनिक रिकॉर्ड! पिछला रिकॉर्ड {kwh} kWh था",
   "tg_monthly_energy": "इस माह उत्पादित ऊर्जा: {kwh} kWh",

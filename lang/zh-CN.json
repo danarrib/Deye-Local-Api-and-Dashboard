@@ -19,7 +19,6 @@
   "chart_total_power": "总功率",
   "chart_radiator_temp": "散热器温度",
   "language_label": "语言",
-
   "nav_reports": "报告",
   "range_a": "范围 A",
   "range_b": "范围 B",
@@ -42,6 +41,7 @@
   "group_month": "月",
   "group_year": "年",
   "group_none": "无",
+  "group_pvinput": "按PV输入",
   "chart_bars": "柱状图",
   "chart_lines": "折线图",
   "chart_doughnut": "圆环图",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "请为范围 B 选择至少一台逆变器。",
   "alert_server_error": "服务器错误。",
   "alert_server_unreachable": "无法连接服务器。",
-
   "admin_go_dashboard": "仪表盘",
   "admin_logout": "退出登录",
   "admin_db_setup_title": "数据库设置",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "找到 1 条记录",
   "admin_log_entries_found": "找到 {count} 条记录",
   "admin_log_error": "错误：{error}",
-
   "weather_cond_clear_sky": "晴天",
   "weather_cond_mainly_clear": "大部晴天",
   "weather_cond_partly_cloudy": "局部多云",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "中雷暴",
   "weather_cond_heavy_thunderstorm": "强雷暴",
   "weather_cond_unknown": "未知",
-
   "chart_x_axis": "时间",
   "chart_y_axis": "功率 (W)",
   "chart_summary_energy": "总电量:  {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "散热器:  {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "日出: {sunrise} | 日落: {sunset}",
-
   "tg_daily_energy": "今日发电量：{kwh} kWh",
   "tg_daily_record": "🏆 新单日纪录！上次纪录为 {kwh} kWh",
   "tg_monthly_energy": "本月发电量：{kwh} kWh",

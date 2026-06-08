@@ -19,7 +19,6 @@
   "chart_total_power": "Total Power",
   "chart_radiator_temp": "Radiator Temp",
   "language_label": "Language",
-
   "nav_reports": "Reports",
   "range_a": "Range A",
   "range_b": "Range B",
@@ -42,6 +41,7 @@
   "group_month": "Month",
   "group_year": "Year",
   "group_none": "None",
+  "group_pvinput": "Per PV Input",
   "chart_bars": "Bars",
   "chart_lines": "Lines",
   "chart_doughnut": "Doughnut",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Select at least one inverter for Range B.",
   "alert_server_error": "Server error.",
   "alert_server_unreachable": "Could not reach the server.",
-
   "admin_go_dashboard": "Dashboard",
   "admin_logout": "Logout",
   "admin_db_setup_title": "Database Setup",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 entry found",
   "admin_log_entries_found": "{count} entries found",
   "admin_log_error": "Error: {error}",
-
   "weather_cond_clear_sky": "Clear sky",
   "weather_cond_mainly_clear": "Mainly clear",
   "weather_cond_partly_cloudy": "Partly cloudy",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Moderate thunderstorm",
   "weather_cond_heavy_thunderstorm": "Heavy thunderstorm",
   "weather_cond_unknown": "Unknown",
-
   "chart_x_axis": "Time",
   "chart_y_axis": "Power (W)",
   "chart_summary_energy": "Total Energy:   {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Avg/Peak Rad:   {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "Sunrise: {sunrise} | Sunset: {sunset}",
-
   "tg_daily_energy": "Total energy generated today: {kwh} kWh",
   "tg_daily_record": "🏆 New daily record! Previous record was {kwh} kWh",
   "tg_monthly_energy": "Total energy generated this month: {kwh} kWh",

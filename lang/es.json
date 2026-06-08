@@ -19,7 +19,6 @@
   "chart_total_power": "Potencia Total",
   "chart_radiator_temp": "Temp. Radiador",
   "language_label": "Idioma",
-
   "nav_reports": "Informes",
   "range_a": "Rango A",
   "range_b": "Rango B",
@@ -42,6 +41,7 @@
   "group_month": "Mes",
   "group_year": "Año",
   "group_none": "Ninguno",
+  "group_pvinput": "Por Entrada FV",
   "chart_bars": "Barras",
   "chart_lines": "Líneas",
   "chart_doughnut": "Rosquilla",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "Seleccione al menos un inversor para el Rango B.",
   "alert_server_error": "Error del servidor.",
   "alert_server_unreachable": "No se pudo contactar al servidor.",
-
   "admin_go_dashboard": "Dashboard",
   "admin_logout": "Cerrar sesión",
   "admin_db_setup_title": "Configuración de la Base de Datos",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1 entrada encontrada",
   "admin_log_entries_found": "{count} entradas encontradas",
   "admin_log_error": "Error: {error}",
-
   "weather_cond_clear_sky": "Cielo despejado",
   "weather_cond_mainly_clear": "Principalmente despejado",
   "weather_cond_partly_cloudy": "Parcialmente nublado",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "Tormenta moderada",
   "weather_cond_heavy_thunderstorm": "Tormenta fuerte",
   "weather_cond_unknown": "Desconocido",
-
   "chart_x_axis": "Hora",
   "chart_y_axis": "Potencia (W)",
   "chart_summary_energy": "Energía Total:  {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "Rad. Med/Máx:   {temps}",
   "chart_summary_na": "N/D",
   "chart_summary_sun": "Amanecer: {sunrise} | Atardecer: {sunset}",
-
   "tg_daily_energy": "Energía generada hoy: {kwh} kWh",
   "tg_daily_record": "🏆 ¡Nuevo récord diario! El récord anterior era {kwh} kWh",
   "tg_monthly_energy": "Energía generada este mes: {kwh} kWh",

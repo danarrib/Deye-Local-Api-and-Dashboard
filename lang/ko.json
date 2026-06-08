@@ -19,7 +19,6 @@
   "chart_total_power": "총 전력",
   "chart_radiator_temp": "방열판 온도",
   "language_label": "언어",
-
   "nav_reports": "보고서",
   "range_a": "범위 A",
   "range_b": "범위 B",
@@ -42,6 +41,7 @@
   "group_month": "월",
   "group_year": "년",
   "group_none": "없음",
+  "group_pvinput": "PV 입력별",
   "chart_bars": "막대",
   "chart_lines": "선",
   "chart_doughnut": "도넛",
@@ -123,7 +123,6 @@
   "alert_select_inverter_b": "범위 B에서 인버터를 하나 이상 선택하세요.",
   "alert_server_error": "서버 오류.",
   "alert_server_unreachable": "서버에 연결할 수 없습니다.",
-
   "admin_go_dashboard": "대시보드",
   "admin_logout": "로그아웃",
   "admin_db_setup_title": "데이터베이스 설정",
@@ -244,7 +243,6 @@
   "admin_log_entry_found": "1개 항목 발견",
   "admin_log_entries_found": "{count}개 항목 발견",
   "admin_log_error": "오류: {error}",
-
   "weather_cond_clear_sky": "맑음",
   "weather_cond_mainly_clear": "대체로 맑음",
   "weather_cond_partly_cloudy": "구름 조금",
@@ -273,7 +271,6 @@
   "weather_cond_moderate_thunderstorm": "보통 뇌우",
   "weather_cond_heavy_thunderstorm": "강한 뇌우",
   "weather_cond_unknown": "알 수 없음",
-
   "chart_x_axis": "시간",
   "chart_y_axis": "전력 (W)",
   "chart_summary_energy": "총 전력:  {kwh} kWh",
@@ -281,7 +278,6 @@
   "chart_summary_radiator": "방열판:   {temps}",
   "chart_summary_na": "N/A",
   "chart_summary_sun": "일출: {sunrise} | 일몰: {sunset}",
-
   "tg_daily_energy": "오늘 발전량: {kwh} kWh",
   "tg_daily_record": "🏆 새 일간 기록! 이전 기록은 {kwh} kWh였습니다",
   "tg_monthly_energy": "이번 달 발전량: {kwh} kWh",
