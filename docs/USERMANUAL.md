@@ -510,11 +510,11 @@ The main chart shows combined power output across all inverters over the course 
 
 ### 6.4 Individual inverter charts
 
-Below the Total Power chart there is one chart per configured inverter, laid out in a two-column grid. Each chart shows the same data as the Total Power chart but scoped to a single inverter: power output over the day, and radiator temperature overlay if available.
+Below the Total Power chart there is one chart per configured inverter, laid out in a two-column grid. Each chart shows power output over the day scoped to that inverter. For inverters polled via SolarmanV5, the chart also displays a stacked per-PV-input breakdown: each of the connected panels (PV1–PV4) is drawn as a filled area, making it easy to see how much each panel contributes to the total at any point in the day. The radiator temperature overlay is shown as a line on a separate right axis when available.
 
 The chart title includes the inverter's friendly name, its serial number, and the total energy produced that day (e.g. `Rooftop East (1234567890) — 3.2 kWh`). Each inverter is assigned a distinct colour so the charts are easy to tell apart when comparing multiple inverters side by side.
 
-![Individual inverter charts with per-inverter production and radiator temperature overlays](screenshots/dashboard_chart_inverters.png)
+![Individual inverter charts with stacked per-PV-input breakdown and radiator temperature overlay](screenshots/dashboard_chart_inverters.png)
 
 ### 6.5 Dark mode
 
@@ -571,6 +571,7 @@ The **Group by** selector controls how data points are bucketed before being dis
 | **Week** | One row per calendar week | Weekly production trends |
 | **Month** | One row per calendar month | Monthly totals and year-over-year comparison |
 | **Year** | One row per calendar year | Long-term production history |
+| **Per PV Input** | One row per panel (PV1–PV4) aggregated across the range | Comparing individual panel performance (SolarmanV5 only) |
 
 > **Performance note:** Using **None** (no grouping) on a range longer than 7 days can be slow, as it returns one row for every 5-minute interval across the entire range. A warning appears in the filter panel if you choose this combination. For long ranges, use Day grouping or higher.
 
@@ -708,7 +709,7 @@ The radiator temperature is the heat-sink temperature measured inside the invert
 
 ### 9.3 Per-panel data (PV inputs)
 
-When polled via SolarmanV5, the inverter reports data for each individual solar panel connected to it. This data is stored in the database and will be accessible in the Reports page (per-panel filtering and grouping is a planned feature — see `docs/TODO.md`).
+When polled via SolarmanV5, the inverter reports data for each individual solar panel connected to it. This data is stored in the database and is available in the Reports page via the **Per PV Input** group-by option, which aggregates energy and peak power per panel across the selected date range and supports A/B range comparison.
 
 Each PV input reports:
 

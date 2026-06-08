@@ -118,7 +118,7 @@ The reports page lets you analyse historical production data with flexible group
 
 - **Two date ranges (A and B):** run a single range for totals, or add a second range to compare periods side-by-side (e.g. this month vs last month, or this summer vs last summer)
 - **Per-range time-of-day filter:** narrow each range to a specific window (e.g. Range A = 08:00–12:00, Range B = 12:00–18:00) to compare morning and afternoon production
-- **Group by:** Hour (aggregated by hour-of-day across the range), Morning and Afternoon (two buckets: before/after noon), Day, Week, or Month
+- **Group by:** Hour (aggregated by hour-of-day across the range), Morning and Afternoon (two buckets: before/after noon), Day, Week, Month, or Per PV Input (panel-level comparison, SolarmanV5 only)
 - **Chart types:** Bars, Lines, or Doughnut
 - **Inverter selection:** when multiple inverters are configured, choose which ones to include per range
 - **Summary cards:** total energy, daily average, peak power, average temperature, and dominant weather condition — with percentage deltas when comparing two ranges
