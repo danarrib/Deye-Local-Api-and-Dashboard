@@ -518,7 +518,7 @@
 
         let values = data.map(d => d.total_power_now);
         let radiatorValues = data.map(d =>
-          d.avg_radiator_temp !== null && d.avg_radiator_temp !== '' ? parseFloat(d.avg_radiator_temp) : null
+          d.max_radiator_temp !== null && d.max_radiator_temp !== '' ? parseFloat(d.max_radiator_temp) : null
         );
         const hasRadiator = radiatorValues.some(v => v !== null);
 

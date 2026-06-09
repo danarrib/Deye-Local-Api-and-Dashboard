@@ -341,7 +341,7 @@ ORDER BY ti.interval_start, idet.order,pvsd.device_sn, pvsd.created_at;";
 SELECT
     ti.interval_start as time,
     SUM(pvsd.power_now) as total_power_now,
-    ROUND(AVG(pvsd.radiator_temp))::int AS avg_radiator_temp
+    MAX(pvsd.radiator_temp)::int AS max_radiator_temp
 FROM time_intervals ti
 LEFT JOIN LATERAL (
     SELECT *

@@ -494,7 +494,7 @@ The main chart shows combined power output across all inverters over the course 
 
 **Left Y-axis (Watts)** — total power being generated at each 5-minute interval.
 
-**Right Y-axis (°C)** — appears only when at least one inverter reports temperature data (SolarmanV5 required). Displays the average radiator temperature across all inverters as a separate pink line overlaid on the same chart. The axis is fixed between 0 and 90 °C.
+**Right Y-axis (°C)** — appears only when at least one inverter reports temperature data (SolarmanV5 required). Displays the highest radiator temperature recorded across all inverters at each interval as a separate pink line overlaid on the same chart. The axis is fixed between 0 and 90 °C.
 
 **Weather annotations** — when weather data is available, a dashed vertical line and an emoji icon are drawn on the chart at each moment the weather condition changed during the day. This makes it easy to correlate dips in production with cloud cover or rain. The emoji icons used are:
 
@@ -1139,7 +1139,7 @@ GET http://192.168.1.50:8080/overall.php?date=2025-06-01
 
 Each object in `latest_inverter_data` contains: `id`, `device_sn`, `power_now`, `energy_today`, `energy_total`, `radiator_temp` (null if not available), `created_at` (UTC), `created_at_local` (plant timezone), `friendly_name`.
 
-Each object in `detailed_powerplant_data` contains: `time` (ISO 8601 UTC), `total_power_now`, `avg_radiator_temp`.
+Each object in `detailed_powerplant_data` contains: `time` (ISO 8601 UTC), `total_power_now`, `max_radiator_temp`.
 
 Each object in `weather_changes` contains: `time` (ISO 8601 UTC), `condition` (text description).
 
@@ -1212,7 +1212,7 @@ GET http://192.168.1.50:8080/reports.php?a_from=2025-01-01&a_to=2025-06-30&group
       "daily_avg_kwh": 4.6,
       "peak_power_w": 1840,
       "avg_temp": 22,
-      "avg_radiator_temp": 45,
+      "max_radiator_temp": 45,
       "dominant_condition": "Partly cloudy"
     },
     "data": [
@@ -1221,7 +1221,7 @@ GET http://192.168.1.50:8080/reports.php?a_from=2025-01-01&a_to=2025-06-30&group
         "energy_kwh": "98.40",
         "peak_power_w": "1620",
         "avg_temp": "18",
-        "avg_radiator_temp": "38",
+        "max_radiator_temp": "38",
         "dominant_condition": "Partly cloudy"
       }
     ]
