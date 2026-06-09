@@ -145,9 +145,9 @@ The inverter web interface (HTTP port 80) is protected by HTTP Basic Auth. The f
 
 If these have been changed, you will need the current credentials during setup. You can verify them by opening `http://<inverter-ip>/` in a browser on the same network.
 
-> *[Screenshot needed: browser showing the inverter's HTTP Basic Auth login prompt]*
+![Inverter HTTP Basic Auth login prompt](screenshots/inverter_login.png)
 
-> *[Screenshot needed: inverter's web status page after login, showing device serial number and current power output]*
+![Inverter web status page showing device serial number and current power output](screenshots/inverter_status.png)
 
 ### 2.6 Internet access on the host machine (optional but recommended)
 
@@ -171,7 +171,7 @@ The application needs the IP address of each inverter. The easiest ways to find 
 **From your router's admin panel**
 Log in to your router (typically at `http://192.168.1.1` or `http://192.168.0.1`) and look for a section called "Connected devices", "DHCP clients", or "LAN clients". Look for a device whose name contains "DEYE", "SOLAR", or "SolarmanWiFi". The IP address listed there is your inverter's current address.
 
-> *[Screenshot needed: router admin panel showing the DHCP client list with the inverter device highlighted]*
+![Router admin panel showing DHCP client list with the inverter device highlighted](screenshots/router_ip.png)
 
 **From the Solarman app**
 Open the Solarman app on your phone, go to your device settings, and look for a "Local connection" or network info section. Some app versions display the inverter's local IP address directly.
@@ -202,7 +202,8 @@ To set a DHCP reservation:
 
 Repeat for each inverter.
 
-> *[Screenshot needed: router admin panel showing a DHCP reservation entry for an inverter, with MAC address and assigned IP]*
+![Router admin panel showing a DHCP range configuration](screenshots/router_config.png)
+![Inverter admin panel showing a manual IP address configuration](screenshots/inverter_ip.png)
 
 ### 3.3 Verify the inverter is reachable
 
@@ -299,7 +300,7 @@ docker compose ps
 
 All three should show a status of `running` (or `Up`).
 
-> *[Screenshot needed: terminal output of `docker compose ps` showing all three containers running]*
+![Terminal output of docker compose ps showing all three containers running](screenshots/terminal_docker_compose_ps.png)
 
 ### 4.3 Open the admin panel
 
@@ -641,7 +642,7 @@ Each daily report consists of:
   - A new daily record announcement (🏆) if today's production exceeded the previous best
   - On the last day of each month: the total energy for the month, and a new monthly record announcement if applicable
 
-> *[Screenshot needed: Telegram chat showing a received daily report with the chart image and caption]*
+![Telegram chat showing a received daily report with chart image and caption](screenshots/telegram_daily_report.png)
 
 ### 8.2 When reports are not sent
 
