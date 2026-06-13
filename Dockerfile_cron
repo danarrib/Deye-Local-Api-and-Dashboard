@@ -22,4 +22,4 @@ RUN (crontab -l ; echo "*/5 * * * * curl -s http://deye_php/crontasks.php >> /va
 RUN (crontab -l ; echo "0 2 * * * /usr/local/bin/backup.sh >> /var/log/cron.log 2>&1") | crontab
 
 # Run the command on container startup
-CMD cron && tail -f /var/log/cron.log
+CMD printenv | grep '^PG' > /etc/backup-env && cron && tail -f /var/log/cron.log
